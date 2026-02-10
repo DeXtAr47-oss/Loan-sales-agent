@@ -19,3 +19,21 @@ class MasterAgent:
         state['next_action'] = 'await_customer_info'
 
         return state
+    
+    def end_conversation(self, state: LoanState) -> LoanState:
+        if state["final_status"] == "rejected":
+            closing_msg = f"""Unfortunately, your application could not be approved at this time due to:
+                            {state.get('rejection_reason')}
+
+                            You may reapply after 3 months or contact our customer service for alternative options.
+
+                            Thank you for your time! 🙏"""
+            
+        else:
+            closing_msg = """Thank you for completing your loan application with us! 
+
+                        Our team will contact you shortly for the next steps. Have a great day! 😊"""
+        
+            state["messages"].append(AIMessage(content=closing_msg))
+            
+        return state
