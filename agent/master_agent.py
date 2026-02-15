@@ -1,12 +1,12 @@
 import uuid
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 
-from .config import MODEL
+from .config import LLM
 from .workflow.state import LoanState
 
 class MasterAgent:
     def __init__(self):
-        self.llm = MODEL
+        self.llm = LLM
 
     def start_conversation(self, state: LoanState) -> LoanState:
         if not state.get("conversation_id"):
