@@ -1,15 +1,14 @@
-from langchain_huggingface import ChatHuggingFace, HuggingFaceEndpoint
+from langchain_ollama import ChatOllama
 from dotenv import load_dotenv
 
 load_dotenv()
 
-LLM = HuggingFaceEndpoint(
-    repo_id='Qwen/Qwen2.5-7B-Instruct',
-    task='text-generation',
-    max_new_tokens=512,
-    temperature=0.5,
-    return_full_text=False,
-    do_sample=False
-)
+MODEL = "qwen2.5:7b"
 
-MODEL = ChatHuggingFace(llm = LLM)
+LLM = ChatOllama(
+    model = MODEL,
+    temperature=0.2,
+    num_predict=512,
+    top_p=0.8,
+    top_k=20
+)
