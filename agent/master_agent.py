@@ -34,6 +34,6 @@ class MasterAgent:
 
                         Our team will contact you shortly for the next steps. Have a great day! 😊"""
         
-            state["messages"].append(AIMessage(content=closing_msg))
+        state["messages"].append(AIMessage(content=closing_msg))
             
         return state

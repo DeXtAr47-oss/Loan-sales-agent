@@ -1,6 +1,7 @@
 from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
-from config import LLM
-from workflow.state import LoanState
+
+from .config import LLM
+from .workflow.state import LoanState
 
 class SalesAgent:
     def __init__(self):
