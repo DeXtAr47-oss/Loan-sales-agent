@@ -1,7 +1,7 @@
 import uuid
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 
-from .config import LLM
+from ..config import LLM
 from .workflow.state import LoanState
 
 class MasterAgent:
