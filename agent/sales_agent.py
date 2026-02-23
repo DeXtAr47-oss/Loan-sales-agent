@@ -32,7 +32,7 @@ class SalesAgent:
 
         state['messages'].append(response.content)
 
-        if state.get('loan_amount') and state.get('tenure_months'):
+        if state.get('loan_amount') and state.get('tenure_months') and state.get('loan_type'):
             state['next_action'] = "verification"
         else:
             state['next_action'] = 'continue_sales'

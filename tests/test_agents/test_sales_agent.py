@@ -36,6 +36,7 @@ class TestSalesAgent:
             'pre_approved_limit': 2500000,
             'messages': [],
             'loan_amount': 200000,
+            'loan_type': 'Car loan',
             'tenure_months': 24
         }
 
