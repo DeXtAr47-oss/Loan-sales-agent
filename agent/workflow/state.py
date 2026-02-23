@@ -15,6 +15,7 @@ class LoanState(TypedDict):
 
     # Loan details
     loan_amount: Optional[float]
+    loan_type: Optional[str]
     tenure_months: Optional[int]
     interest_rate: Optional[float]
     monthly_emi: Optional[float]
