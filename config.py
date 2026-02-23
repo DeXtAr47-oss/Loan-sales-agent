@@ -1,5 +1,6 @@
 from langchain_ollama import ChatOllama
 from dotenv import load_dotenv
+import os
 
 load_dotenv()
 
@@ -13,4 +14,6 @@ LLM = ChatOllama(
     top_k=20
 )
 
-SANCTION_LETTER_DIR = "agent/utils/sanction_letters"
+path = "agent/utils/sanction_letters"
+os.makedirs(path, exist_ok=True)
+SANCTION_LETTER_DIR = path
