@@ -12,3 +12,5 @@ LLM = ChatOllama(
     top_p=0.8,
     top_k=20
 )
+
+SANCTION_LETTER_DIR = "agent/utils/sanction_letters"
