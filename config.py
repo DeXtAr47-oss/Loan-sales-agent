@@ -1,11 +1,8 @@
 from langchain_ollama import ChatOllama
-from dotenv import load_dotenv
 import os
 
-load_dotenv()
-
+# LLM config
 MODEL = "qwen2.5:7b"
-
 LLM = ChatOllama(
     model = MODEL,
     temperature=0.2,
@@ -14,6 +11,19 @@ LLM = ChatOllama(
     top_k=20
 )
 
+# Sanction letter stored path
 path = "agent/utils/sanction_letters"
 os.makedirs(path, exist_ok=True)
 SANCTION_LETTER_DIR = path
+
+# Database Config
+POSTGRES_CONFIG = {
+    "host": os.getenv('POSTGRES_HOST', 'localhost'),
+    "port": os.getev('POSTGRES_PORT', '5432'),
+    "database": os.getenv('POSTGRES_DB', 'nbfc_database'),
+    "user": os.getenv('POSTGRES_USER', 'nbfc_user'),
+    "password": os.getenv('POSTGRES_PASSWORD', 'nbfc123')
+}
+DATABASE_URL = f"postgresql://{POSTGRES_CONFIG['user']}:{POSTGRES_CONFIG['password']}@{POSTGRES_CONFIG['host']}:{POSTGRES_CONFIG['port']}/{POSTGRES_CONFIG['database']}"
+DB_PATH = "databases"
+os.makedirs(DB_PATH, exist_ok=True)
