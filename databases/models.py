@@ -19,9 +19,9 @@ class Customer(base):
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
     credit_score = relationship("CreditScore", back_populates="customer", uselist=False, cascade="all, delete-orphan")
-    loan_offers = relationship("LonaOffer", back_populates="laonoffer", cascade="all, delete-orphan")
-    loan_application = relationship("LoanApplication", back_populates="loanapplication", cascade="all, delete-orphan")
-    salary_slips = relationship("SalarySlip", back_populates="salaryslip", cascade="all, delete-orphan")
+    loan_offers = relationship("LoanOffer", back_populates="customer", cascade="all, delete-orphan")
+    loan_application = relationship("LoanApplication", back_populates="customer", cascade="all, delete-orphan")
+    salary_slips = relationship("SalarySlip", back_populates="customer", cascade="all, delete-orphan")
 
 class CreditScore(base):
     __tablename__="creditscore"
@@ -43,7 +43,7 @@ class LoanOffer(base):
 
     customer = relationship("Customer", back_populates="loan_offers")
 
-class LoanApplicaiton(base):
+class LoanApplication(base):
     __tablename__="loanapplication"
     application_id = Column(Integer, primary_key=True)
     customer_id = Column(Integer, ForeignKey('customer.id', ondelete="CASCADE"), index=True)
@@ -58,6 +58,7 @@ class LoanApplicaiton(base):
     approved_at = Column(DateTime(timezone=True), server_default=func.now())
 
     customer = relationship("Customer", back_populates="loan_application")
+    salary_slips = relationship("SalarySlip", back_populates="loanapplication", cascade="all, delete-orphan")
 
 class SalarySlip(base):
     __tablename__="salaryslip"
@@ -69,4 +70,4 @@ class SalarySlip(base):
     upload_date = Column(DateTime(timezone=True), server_default=func.now())
 
     customer = relationship("Customer", back_populates="salary_slips")
-    
+    loanapplication = relationship("LoanApplication", back_populates="salary_slips")
