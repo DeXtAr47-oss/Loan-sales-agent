@@ -19,11 +19,12 @@ SANCTION_LETTER_DIR = path
 # Database Config
 POSTGRES_CONFIG = {
     "host": os.getenv('POSTGRES_HOST', 'localhost'),
-    "port": os.getev('POSTGRES_PORT', '5432'),
+    "port": os.getenv('POSTGRES_PORT', '5432'),
     "database": os.getenv('POSTGRES_DB', 'nbfc_database'),
     "user": os.getenv('POSTGRES_USER', 'nbfc_user'),
     "password": os.getenv('POSTGRES_PASSWORD', 'nbfc123')
 }
 DATABASE_URL = f"postgresql://{POSTGRES_CONFIG['user']}:{POSTGRES_CONFIG['password']}@{POSTGRES_CONFIG['host']}:{POSTGRES_CONFIG['port']}/{POSTGRES_CONFIG['database']}"
-DB_PATH = "databases"
+TEST_DATABASE_URL = f"postgresql://{POSTGRES_CONFIG['user']}:{POSTGRES_CONFIG['password']}@{POSTGRES_CONFIG['host']}:{POSTGRES_CONFIG['port']}/nbfc_test_database"
+DB_PATH = "databases/data/"
 os.makedirs(DB_PATH, exist_ok=True)
