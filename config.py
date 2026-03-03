@@ -1,10 +1,12 @@
 from langchain_ollama import ChatOllama
 import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 # LLM config
-MODEL = "qwen2.5:7b"
 LLM = ChatOllama(
-    model = MODEL,
+    model = os.getenv("MDOEL"),
     temperature=0.2,
     num_predict=512,
     top_p=0.8,
@@ -12,19 +14,9 @@ LLM = ChatOllama(
 )
 
 # Sanction letter stored path
-path = "agent/utils/sanction_letters"
-os.makedirs(path, exist_ok=True)
-SANCTION_LETTER_DIR = path
+os.makedirs(os.getenv("SANCTION_LETTER_PATH"), exist_ok=True)
 
 # Database Config
-POSTGRES_CONFIG = {
-    "host": os.getenv('POSTGRES_HOST', 'localhost'),
-    "port": os.getenv('POSTGRES_PORT', '5432'),
-    "database": os.getenv('POSTGRES_DB', 'nbfc_database'),
-    "user": os.getenv('POSTGRES_USER', 'nbfc_user'),
-    "password": os.getenv('POSTGRES_PASSWORD', 'nbfc123')
-}
-DATABASE_URL = f"postgresql://{POSTGRES_CONFIG['user']}:{POSTGRES_CONFIG['password']}@{POSTGRES_CONFIG['host']}:{POSTGRES_CONFIG['port']}/{POSTGRES_CONFIG['database']}"
-TEST_DATABASE_URL = f"postgresql://{POSTGRES_CONFIG['user']}:{POSTGRES_CONFIG['password']}@{POSTGRES_CONFIG['host']}:{POSTGRES_CONFIG['port']}/nbfc_test_database"
-DB_PATH = "databases/data/"
-os.makedirs(DB_PATH, exist_ok=True)
+DATABASE_URL = f"postgresql://{os.getenv("POSTGRES_USER")}:{os.getenv("POSTGRES_PASSWORD")}@{os.getenv("POSTGRES_HOST")}:{os.getenv("POSTGRES_PORT")}/{os.getenv("POSTGRES_DATABASE")}"
+TEST_DATABASE_URL = f"postgresql://{os.getenv("POSTGRES_USER")}:{os.getenv("POSTGRES_PASSWORD")}@{os.getenv("POSTGRES_HOST")}:{os.getenv("POSTGRES_PORT")}/nbfc_test_database"
+os.makedirs(os.getenv("DB_PATH"), exist_ok=True)
