@@ -138,7 +138,7 @@ def delete_loan_offer(db: Session, offer_id: int):
     return db_loan_offer
  
 
- 
+
 def get_loan_applications(db: Session, cust_id: int):
     return (
         db.query(models.LoanApplication)
@@ -160,7 +160,7 @@ def create_loan_application(db: Session, cust_id: int, application: schemas.Loan
         customer_id=cust_id,
         loan_amount=application.loan_amount,
         tenure_months=application.tenure_months,
-        interset_rate=application.interset_rate,
+        interest_rate=application.interest_rate,
         monthly_emi=application.monthly_emi,
         status=application.status,
         rejection_reason=application.rejection_reason,

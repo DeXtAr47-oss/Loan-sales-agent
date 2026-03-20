@@ -60,7 +60,7 @@ class LoanOfferResponse(LoanOfferBase):
 class LoanApplicationBase(BaseModel):
     loan_amount: Decimal
     tenure_months: int
-    interset_rate: Decimal
+    interest_rate: Decimal
     monthly_emi: int
     status: Optional[str]
     rejection_reason: Optional[str]

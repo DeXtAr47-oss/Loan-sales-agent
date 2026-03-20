@@ -4,7 +4,7 @@ from datetime import datetime
 from langchain.tools import tool
 
 from ..workflow.state import LoanState
-from config import SANCTION_LETTER_DIR
+from config import SANCTION_LETTER_PATH
 
 @tool
 def generate_sanction_letter_pdf(state: LoanState) -> str:
@@ -12,7 +12,7 @@ def generate_sanction_letter_pdf(state: LoanState) -> str:
     This function is used for generating sanction letters
     """
     filename = f"{state['application_id']}.pdf"
-    filepath = SANCTION_LETTER_DIR / filename
+    filepath = SANCTION_LETTER_PATH / filename
     
     c = canvas.Canvas(str(filepath), pagesize=letter)
     width, height = letter
