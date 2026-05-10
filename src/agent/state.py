@@ -1,15 +1,16 @@
 from typing import TypedDict, Annotated, Optional
 from decimal import Decimal
+from uuid import UUID
 import operator
 
 class LoanState(TypedDict):
     
     # conversation
     messages: Annotated[list, operator.add]
-    conversation_id: str 
+    conversation_id: UUID
 
     # Customer info
-    customer_id: int
+    customer_id: UUID
     customer_name: Optional[str]
     customer_email: Optional[str]
     customer_data: Optional[dict]
