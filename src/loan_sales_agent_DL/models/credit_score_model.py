@@ -16,8 +16,9 @@ class CreditScore(base):
 class RelCreditScoreCustomer(base):
     __tablename__="rel_credit_score_customer"
     rel_credit_score_customer_id = Column(Integer, primary_key=True, autoincrement=True)
-    credit_score_id = Column(Integer, ForeignKey("creditscore.credit_score_id", ondelete="CASCADE"))
+    credit_score_id = Column(Integer, ForeignKey("credit_score.credit_score_id", ondelete="CASCADE"))
     customer_id = Column(UUID(as_uuid=True), ForeignKey("customer.customer_id", ondelete="CASCADE"))
+    is_deleted = Column(Boolean, default=False)
 
     customer = relationship("Customer", back_populates="credit_score_rel")
     credit_score = relationship("CreditScore", back_populates="rel_customer")
