@@ -1,7 +1,7 @@
 from langchain_core.messages import AIMessage, SystemMessage, HumanMessage
 
 from src.agent.state import LoanState
-from config import LLM
+from src.loan_sales_agent_shared.config import LLM
 from src.loan_sales_agent_DL.repository.customer_repository import get_customer_by_email
 
 class VerificationAgent:

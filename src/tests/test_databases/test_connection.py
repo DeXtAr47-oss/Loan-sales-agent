@@ -2,7 +2,7 @@ import pytest
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
 
-from config import TEST_DATABASE_URL
+from src.loan_sales_agent_shared.config import TEST_DATABASE_URL
 
 @pytest.fixture(scope="session")
 def engine():

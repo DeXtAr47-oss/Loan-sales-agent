@@ -1,7 +1,7 @@
 from langchain.messages import AIMessage
 from sqlalchemy.orm import Session
 
-from config import MIN_CREDIT_SCORE, EMI_TO_SALARY_RATIO
+from src.loan_sales_agent_shared.config import MIN_CREDIT_SCORE, EMI_TO_SALARY_RATIO
 from src.agent.state import LoanState
 from src.loan_sales_agent_DL.repository.credit_score_repository import get_credit_score, update_credit_score
 from src.loan_sales_agent_DL.repository.loan_application_repository import update_conversation_history

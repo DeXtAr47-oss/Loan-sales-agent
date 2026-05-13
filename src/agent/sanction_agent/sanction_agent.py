@@ -2,7 +2,7 @@ import uuid
 import datetime
 from langchain_core.messages import SystemMessage
 from sqlalchemy.orm import Session
-from config import LLM
+from src.loan_sales_agent_shared.config import LLM
 
 from src.agent.utils.pdf_generator import generate_sanction_letter_pdf
 from src.loan_sales_agent_DL.repository.loan_application_repository import create_loan_application

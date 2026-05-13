@@ -22,10 +22,11 @@ class LoanApplication(base):
     rel_salary_slips = relationship("RelSalarySlipLoanApplication", back_populates="loan_application", cascade="all, delete-orphan")
 
 class RelLoanApplicationCustomer(base):
-    __tablename__="rel_loan_pplication_customer"
-    rel_loan_application_customer_id = Column(UUID(as_uuid=True), primary_key=True, autoincrement=True)
+    __tablename__="rel_loan_application_customer"
+    rel_loan_application_customer_id = Column(Integer, primary_key=True, autoincrement=True)
     application_id = Column(Integer, ForeignKey('loan_application.application_id', ondelete="CASCADE"))
-    customer_id = Column(Integer, ForeignKey('customer.customer_id', ondelete="CASCADE"))
+    customer_id = Column(UUID(as_uuid=True), ForeignKey('customer.customer_id', ondelete="CASCADE"))
+    is_deleted = Column(Boolean, default=False)
 
     customer = relationship("Customer", back_populates="loan_application_rel")
     loan_application = relationship("LoanApplication", back_populates="customer")

@@ -1,22 +1,33 @@
 from sqlalchemy.orm import Session
 from src.loan_sales_agent_BL.schemas.credit_score_schema import CreditScoreCreate, CreditScoreBase
-import models.credit_score_model as models
-
+from src.loan_sales_agent_DL.models.credit_score_model import CreditScore, RelCreditScoreCustomer
+from src.loan_sales_agent_DL.models.customer_model import Customer
+from uuid import UUID
 
 def get_credit_scores(db: Session):
-    return db.query(models.Salary_slip).all()
+    return db.query(CreditScore.credit_score).all()
 
 
-def get_credit_score(db: Session, cust_id: int):
+def get_credit_score(db: Session, customer_id: UUID):
     return (
-        db.query(models.CreditScore)
-        .filter(models.CreditScore.customer_id == cust_id)
-        .first()
+        db.query(CreditScore)
+        .join(
+            RelCreditScoreCustomer,
+            CreditScore.credit_score_id ==
+            RelCreditScoreCustomer.credit_score_id
+        )
+        .join(
+            Customer,
+            Customer.customer_id ==
+            RelCreditScoreCustomer.customer_id
+        )
+        .filter(Customer.customer_id == customer_id)
+        .all()
     )
 
 
-def set_credit_score(db: Session, cust_id: int, credit_score: CreditScoreCreate):
-    db_credit_score = models.CreditScore(
+def set_credit_score(db: Session, cust_id: UUID, credit_score: CreditScoreCreate):
+    db_credit_score = CreditScore(
         customer_id=cust_id,
         credit_score=credit_score.credit_score
     )

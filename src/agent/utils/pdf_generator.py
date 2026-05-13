@@ -4,7 +4,7 @@ from datetime import datetime
 from langchain.tools import tool
 
 from src.agent.state import LoanState
-from config import SANCTION_LETTER_PATH
+from src.loan_sales_agent_shared.config import SANCTION_LETTER_PATH
 
 @tool
 def generate_sanction_letter_pdf(state: LoanState) -> str:

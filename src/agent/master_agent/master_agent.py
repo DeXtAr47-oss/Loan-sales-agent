@@ -1,7 +1,7 @@
 import uuid
 from langchain_core.messages import AIMessage, SystemMessage
 
-from config import LLM
+from src.loan_sales_agent_shared.config import LLM
 from src.agent.state import LoanState
 
 class MasterAgent:

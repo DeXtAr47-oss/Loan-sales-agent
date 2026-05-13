@@ -18,8 +18,9 @@ class LoanOffer(base):
 class RelLoanOfferCustomer(base):
     __tablename__="rel_loan_offer_customer"
     rel_offer_customer_id = Column(Integer, autoincrement=True, primary_key=True)
-    offer_id = Column(Integer, ForeignKey('loanoffer.offer_id'))
+    offer_id = Column(Integer, ForeignKey('loan_offer.offer_id'))
     customer_id = Column(UUID(as_uuid=True), ForeignKey('customer.customer_id'))
+    is_deleted = Column(Boolean, default=False)
 
     customer = relationship("Customer", back_populates="loan_offers_rel")
     loan_offers = relationship("LoanOffer", back_populates="rel_customer")

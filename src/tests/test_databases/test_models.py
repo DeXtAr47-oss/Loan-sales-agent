@@ -5,7 +5,7 @@ from sqlalchemy.exc import IntegrityError
 
 from src.databases import Customer, CreditScore, LoanApplication, SalarySlip
 from src.loan_sales_agent_shared.connection import base
-from config import TEST_DATABASE_URL
+from src.loan_sales_agent_shared.config import TEST_DATABASE_URL
 
 @pytest.fixture(scope="session")
 def engine():
