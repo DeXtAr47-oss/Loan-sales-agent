@@ -9,7 +9,7 @@ def get_customers(db: Session):
 
 def get_customer(db: Session, cust_id: int):
     return (
-        db.query(models.Customer).filter(models.Customer.id == cust_id).first()
+        db.query(models.Customer).filter(models.Customer.customer_id == cust_id).first()
     )
 
 

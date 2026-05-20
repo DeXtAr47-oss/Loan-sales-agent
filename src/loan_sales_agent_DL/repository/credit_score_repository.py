@@ -27,14 +27,23 @@ def get_credit_score(db: Session, customer_id: UUID):
 
 
 def set_credit_score(db: Session, cust_id: UUID, credit_score: CreditScoreCreate):
-    db_credit_score = CreditScore(
-        customer_id=cust_id,
+    new_credit_score = CreditScore(
         credit_score=credit_score.credit_score
     )
-    db.add(db_credit_score)
+    db.add(new_credit_score)
+    db.flush()
+
+    rel_credit_score_customer = RelCreditScoreCustomer(
+        customer_id=cust_id,
+        credit_score_id=new_credit_score.credit_score_id
+    )
+
+    db.add(rel_credit_score_customer)
     db.commit()
-    db.refresh(db_credit_score)
-    return db_credit_score
+    db.refresh(new_credit_score)
+    db.refresh(rel_credit_score_customer)
+
+    return new_credit_score
 
 
 def update_credit_score(db: Session, cust_id: int, credit_score: CreditScoreBase):
