@@ -1,60 +1,92 @@
+from fastapi import HTTPException, status
+from pydantic import EmailStr
 from sqlalchemy.orm import Session
+from passlib.context import CryptContext
+
 from src.loan_sales_agent_BL.schemas.customer_schema import CustomerCreate, CustomerBase
-import models.customer_model as models
+from src.loan_sales_agent_DL.models import customer_model as models
+import uuid
+
+pwd_context = CryptContext(
+    schemes=["bcrypt"],
+    deprecated="auto"
+)
+
+def get_all_customer(db: Session):
+    return db.query(models.Customer).filter(models.Customer.is_deleted.is_(False)).all()
 
 
-def get_customers(db: Session):
-    return db.query(models.Customer).all()
-
-
-def get_customer(db: Session, cust_id: int):
+def get_customer_by_id(db: Session, cust_id: uuid.UUID):
     return (
-        db.query(models.Customer).filter(models.Customer.customer_id == cust_id).first()
+        db.query(models.Customer).filter(models.Customer.customer_id == cust_id,
+                                         models.Customer.is_deleted.is_(False))
+        .first()
     )
 
 
-def get_customer_by_email(db: Session, email_id: str):
+def get_customer_by_email(db: Session, email_id: EmailStr):
     return (
-        db.query(models.Customer).filter(models.Customer.email == email_id).first()
+        db.query(models.Customer).filter(models.Customer.email == email_id,
+                                         models.Customer.is_deleted.is_(False))
+        .first()
     )
 
 
 def create_customer(db: Session, customer: CustomerCreate):
+    hashed_pw = pwd_context.hash(customer.password)
     db_customer = models.Customer(
+        customer_id=uuid.uuid4(),
         name=customer.name,
-        password=customer.password,
+        password=hashed_pw,
         age=customer.age,
         city=customer.city,
         phone=customer.phone,
         address=customer.address,
         email=customer.email,
-        current_loan_amount=customer.current_loan_amount,
-        pre_approved_limit=customer.pre_approved_limit
+        is_deleted=False
     )
+
     db.add(db_customer)
     db.commit()
     db.refresh(db_customer)
+
     return db_customer
 
 
-def update_customer(db: Session, id: int, customer: CustomerBase):
-    db_customer = get_customer(db, id)
-    if not db_customer:
-        return None
+def update_customer(db: Session, customer: CustomerBase):
 
     for field, value in customer.model_dump(exclude_unset=True).items():
-        setattr(db_customer, field, value)
+        setattr(customer, field, value)
 
+    db.commit()
+    db.refresh(customer)
+
+
+def delete_customer(db: Session, db_customer: CustomerBase):
+    db_customer.is_deleted = True
     db.commit()
     db.refresh(db_customer)
-    return db_customer
 
+def check_email(customer: CustomerBase, db: Session):
+    existing_email = (
+        db.query(models.Customer)
+        .filter(models.Customer.email == customer.email,
+                models.Customer.is_deleted.is_(False))
+        .first()
+    )
+    if existing_email is not None:
+        return True
+    else:
+        return False
 
-def delete_customer(db: Session, id: int):
-    db_employee = get_customer(db, id)
-    if not db_employee:
-        return None
-
-    db.delete(db_employee)
-    db.commit()
-    return db_employee
+def check_phone_number(customer: CustomerBase, db: Session):
+    existing_phone_number = (
+        db.query(models.Customer)
+        .filter(models.Customer.phone == customer.phone,
+                models.Customer.is_deleted.is_(False))
+        .first()
+    )
+    if existing_phone_number is not None:
+        return True
+    else:
+        return False

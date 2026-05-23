@@ -10,17 +10,17 @@ from .loan_application_schema import LoanApplicationResponse
 from .salary_slip_schema import SalarySlipResponse
 
 class CustomerBase(BaseModel):
-    name: Optional[str]
-    age: Optional[int]
-    city: Optional[str]
-    phone: str
-    address: Optional[str]
-    email: EmailStr
+    name: Optional[str] = None
+    age: Optional[int] = None
+    city: Optional[str] = None
+    phone: str = None
+    address: Optional[str] = None
+    email: EmailStr = None
     current_loan_amount: Optional[Decimal] = None
     pre_approved_limit: Optional[Decimal] = None
 
 class CustomerCreate(CustomerBase):
-    password: str
+    password: str = None
 
 class CustomerResponse(CustomerBase):
     customer_id: uuid.UUID
