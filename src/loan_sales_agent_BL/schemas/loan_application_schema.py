@@ -3,8 +3,6 @@ from typing import Optional, List
 from decimal import Decimal
 from datetime import datetime
 
-from .salary_slip_schema import SalarySlipResponse
-
 class LoanApplicationBase(BaseModel):
     loan_amount: Decimal
     tenure_months: int
@@ -19,11 +17,9 @@ class LoanApplicationCreate(LoanApplicationBase):
 
 class LoanApplicationResponse(LoanApplicationBase):
     application_id: int
-    customer_id: int
     conversation_id: int
     created_at: datetime
     approved_at: datetime
-    salary_slips: List[SalarySlipResponse] = []
 
     class Config:
-        orm_mode = True
+        from_attributes = True
