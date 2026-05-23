@@ -8,8 +8,8 @@ class CreditScoreCreate(CreditScoreBase):
     pass
 
 class CreditScoreResponse(CreditScoreBase):
-    customer_id: int
+    credit_score_id: int
     last_updated: datetime
 
     class Config:
-        orm_mode = True
+        from_attributes = True
