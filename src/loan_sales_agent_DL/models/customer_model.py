@@ -7,7 +7,7 @@ from src.loan_sales_agent_shared.connection import base
 
 class Customer(base):
     __tablename__ = "customer"
-    customer_id = Column(UUID, primary_key=True, default=uuid.uuid4)
+    customer_id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     password = Column(String(225), nullable=False)
     name = Column(String(100), index=True)
     age = Column(Integer, index=True)
@@ -22,6 +22,6 @@ class Customer(base):
     is_deleted = Column(Boolean, default=False)
 
     credit_score_rel = relationship("RelCreditScoreCustomer", back_populates="customer", uselist=False, cascade="all, delete-orphan")
-    loan_offers_rel = relationship("LoanOffer", back_populates="customer", uselist=False, cascade="all, delete-orphan")
-    loan_application_rel = relationship("RelLoanApplicationCustomer", back_populates="customer", uselist=False, cascade="all, delete-orphan")
-    salary_slips_rel = relationship("RelSalarySlipCustomer", back_populates="customer", uselist=False, cascade="all, delete-orphan")
+    loan_offers_rel = relationship("RelLoanOfferCustomer", back_populates="customer", cascade="all, delete-orphan")
+    loan_application_rel = relationship("RelLoanApplicationCustomer", back_populates="customer", cascade="all, delete-orphan")
+    salary_slips_rel = relationship("RelSalarySlipCustomer", back_populates="customer", cascade="all, delete-orphan")
