@@ -13,8 +13,7 @@ class LoanOfferCreate(LoanOfferBase):
 
 class LoanOfferResponse(LoanOfferBase):
     offer_id: int
-    customer_id: int
     created_at: datetime
 
     class Config:
-        orm_mode = True
+        from_attributes = True
