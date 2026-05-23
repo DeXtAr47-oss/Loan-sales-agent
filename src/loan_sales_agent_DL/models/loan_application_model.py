@@ -29,4 +29,4 @@ class RelLoanApplicationCustomer(base):
     is_deleted = Column(Boolean, default=False)
 
     customer = relationship("Customer", back_populates="loan_application_rel")
-    loan_application = relationship("LoanApplication", back_populates="customer")
+    loan_application = relationship("LoanApplication", back_populates="rel_customer")

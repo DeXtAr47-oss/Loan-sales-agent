@@ -12,6 +12,7 @@ class SalarySlip(base):
     is_deleted = Column(Boolean, default=False)
 
     rel_customer = relationship("RelSalarySlipCustomer", back_populates="salary_slips", cascade="all, delete-orphan")
+    rel_loan_applications = relationship("RelSalarySlipLoanApplication", back_populates="salary_slip", cascade="all, delete-orphan")
 
 class RelSalarySlipCustomer(base):
     __tablename__ = "rel_salary_slip_customer"
@@ -31,3 +32,4 @@ class RelSalarySlipLoanApplication(base):
     is_deleted = Column(Boolean, default=False)
 
     loan_application = relationship("LoanApplication", back_populates="rel_salary_slips")
+    salary_slip = relationship("SalarySlip", back_populates="rel_loan_applications")

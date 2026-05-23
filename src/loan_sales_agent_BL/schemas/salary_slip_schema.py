@@ -13,9 +13,8 @@ class SalarySlipCreate(SalarySlipBase):
 
 class SalarySlipResponse(SalarySlipBase):
     slip_id: str
-    customer_id: int
     application_id: int
     upload_date: datetime
 
     class Config:
-        orm_mode = True
+        from_attributes = True
