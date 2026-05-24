@@ -7,7 +7,8 @@ import uuid
 from src.loan_sales_agent_shared.connection import get_db
 from src.loan_sales_agent_BL.schemas.customer_schema import (
 CustomerCreate,
-CustomerResponse
+CustomerResponse,
+CustomerBase
 )
 from src.loan_sales_agent_BL.services.customer_service import (
 get_all_customer_service,
@@ -19,8 +20,8 @@ delete_customer_service
 )
 
 router = APIRouter(
-    prefix="/customer",
-    tags=["customer"]
+    prefix="/customers",
+    tags=["customers"]
 )
 
 @router.post("/", response_model=CustomerResponse, status_code=status.HTTP_201_CREATED)
@@ -52,7 +53,7 @@ def get_email(
 @router.put("/{customer_id}", status_code=status.HTTP_204_NO_CONTENT)
 def update(
         customer_id: uuid.UUID,
-        customer: CustomerCreate,
+        customer: CustomerBase,
         db: Session = Depends(get_db)
 ):
     update_customer_service(db, customer_id, customer)

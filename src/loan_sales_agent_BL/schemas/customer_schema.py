@@ -16,6 +16,7 @@ class CustomerBase(BaseModel):
     phone: str = None
     address: Optional[str] = None
     email: EmailStr = None
+    credit_score: Optional[int] = None
     current_loan_amount: Optional[Decimal] = None
     pre_approved_limit: Optional[Decimal] = None
 

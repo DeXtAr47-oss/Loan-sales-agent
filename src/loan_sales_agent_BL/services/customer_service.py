@@ -56,14 +56,17 @@ def create_customer_service(db: Session, customer: CustomerCreate):
     return db_customer
 
 def update_customer_service(db: Session, id: uuid.UUID, customer: CustomerBase):
-    if not get_customer_by_id(db, id):
+    db_customer = get_customer_by_id(db, id)
+    if not db_customer:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Customer not found"
         )
 
     try:
-        update_customer(db, customer)
+        update_data = customer.model_dump(exclude_unset=True)
+        return update_customer(db, db_customer, update_data)
+
     except Exception as e:
         db.rollback()
         raise HTTPException(
