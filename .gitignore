@@ -1,3 +1,8 @@
+# Node
+frontend/node_modules/
+frontend/build/
+frontend/dist/
+
 # Python-generated files
 __pycache__/
 *.py[oc]
