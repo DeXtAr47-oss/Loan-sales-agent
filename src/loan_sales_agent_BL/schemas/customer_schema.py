@@ -8,20 +8,25 @@ from .credit_score_schema import CreditScoreResponse
 from .loan_offer_schema import LoanOfferResponse
 from .loan_application_schema import LoanApplicationResponse
 from .salary_slip_schema import SalarySlipResponse
+from .credit_score_schema import CreditScoreCreate
 
 class CustomerBase(BaseModel):
     name: Optional[str] = None
     age: Optional[int] = None
     city: Optional[str] = None
-    phone: str = None
+    phone: Optional[str] = None
     address: Optional[str] = None
-    email: EmailStr = None
-    credit_score: Optional[int] = None
+    email: Optional[EmailStr] = None
     current_loan_amount: Optional[Decimal] = None
     pre_approved_limit: Optional[Decimal] = None
 
 class CustomerCreate(CustomerBase):
     password: str = None
+    credit_score: Optional[CreditScoreCreate] = None
+
+    class Config:
+        extra = "ignore"
+        populate_by_name = True
 
 class CustomerResponse(CustomerBase):
     customer_id: uuid.UUID
