@@ -85,7 +85,9 @@ export default function AccountForm({ onClose }) {
         email: formData.email,
         city: formData.city,
         address: formData.address,
-        credit_score: parseInt(formData.creditScore)
+        credit_score: {
+          credit_score: parseInt(formData.creditScore)
+        }
       };
 
       const response = await createCustomer(payload);
