@@ -1,11 +1,12 @@
 from sqlalchemy.exc import SQLAlchemyError
 from pydantic import EmailStr
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from passlib.context import CryptContext
 
 from src.loan_sales_agent_BL.schemas.customer_schema import CustomerCreate, CustomerBase
 from src.loan_sales_agent_DL.models import customer_model as models
-from src.loan_sales_agent_DL.models import credit_score_model as credit_score_model
+from src.loan_sales_agent_DL.models.credit_score_model import RelCreditScoreCustomer, CreditScore
+from src.loan_sales_agent_DL.repository.credit_score_repository import set_credit_score
 import uuid
 
 pwd_context = CryptContext(
@@ -13,17 +14,48 @@ pwd_context = CryptContext(
     deprecated="auto"
 )
 
-def get_all_customer(db: Session):
-    return db.query(models.Customer).filter(models.Customer.is_deleted.is_(False)).all()
+def get_all_customer(db: Session, skip: int = 0, limit: int = 100):
+    results = db.query(
+        models.Customer,
+        CreditScore
+    ).outerjoin(
+        RelCreditScoreCustomer,
+        models.Customer.customer_id == RelCreditScoreCustomer.customer_id
+    ).outerjoin(
+        CreditScore,
+        RelCreditScoreCustomer.credit_score_id == CreditScore.credit_score_id
+    ).filter(
+        models.Customer.is_deleted.is_(False)
+    ).offset(skip).limit(limit).all()
+
+
+    customers_map = {}
+    for customer, credit_score in results:
+        if customer.customer_id not in customers_map:
+            customers_map[customer.customer_id] = (customer, credit_score)
+
+    return list(customers_map.values())
 
 
 def get_customer_by_id(db: Session, cust_id: uuid.UUID):
-    return (
-        db.query(models.Customer).filter(models.Customer.customer_id == cust_id,
-                                         models.Customer.is_deleted.is_(False))
-        .first()
-    )
+    result = db.query(
+        models.Customer,
+        CreditScore
+    ).outerjoin(
+        RelCreditScoreCustomer,
+        models.Customer.customer_id == RelCreditScoreCustomer.customer_id
+    ).outerjoin(
+        CreditScore,
+        RelCreditScoreCustomer.credit_score_id == CreditScore.credit_score_id
+    ).filter(
+        models.Customer.customer_id == cust_id,
+        models.Customer.is_deleted.is_(False)
+    ).first()
 
+    if result is None:
+        return None, None
+
+    return result[0], result[1]
 
 def get_customer_by_email(db: Session, email_id: EmailStr):
     return (
@@ -51,18 +83,13 @@ def create_customer(db: Session, customer: CustomerCreate):
     db.flush()
 
     if customer.credit_score is not None:
-        db_credit_score = credit_score_model.CreditScore(
-            credit_score = customer.credit_score
-        )
-        db.add(db_credit_score)
-        db.flush()
+        new_credit_score = set_credit_score(db, customer.credit_score)
 
-        db_rel_credit_score = credit_score_model.RelCreditScoreCustomer(
+        rel_credit_score_customer = RelCreditScoreCustomer(
             customer_id=db_customer.customer_id,
-            credit_score_id=db_credit_score.credit_score_id,
+            credit_score_id=new_credit_score.credit_score_id
         )
-
-        db.add(db_rel_credit_score)
+        db.add(rel_credit_score_customer)
 
     db.commit()
     db.refresh(db_customer)
