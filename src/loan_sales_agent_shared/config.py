@@ -1,6 +1,7 @@
-from langchain_ollama import ChatOllama
+from langchain_ollama import ChatOllama, OllamaEmbeddings
 import os
 from dotenv import load_dotenv
+from pinecone import Pinecone
 
 load_dotenv()
 
@@ -31,4 +32,7 @@ MAX_TENURE_MONTHS = 60
 EMI_TO_SALARY_RATIO = 0.5
 
 # Vector Database
-PINECONE_API_KEY = os.getenv('PINECONE_API_KEY')
+pc = Pinecone(api_key=os.getenv("PINECONE_API_KEY"))
+INDEX = pc.Index("nbfc-customer-memory")
+
+# Embedding model
