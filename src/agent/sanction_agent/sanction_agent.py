@@ -6,7 +6,7 @@ from src.loan_sales_agent_shared.config import LLM
 
 from src.agent.utils.pdf_generator import generate_sanction_letter_pdf
 from src.loan_sales_agent_DL.repository.loan_application_repository import create_loan_application
-from src.agent.state import LoanState
+from agent.state_and_graph.state import LoanState
 from src.loan_sales_agent_BL.schemas.loan_application_schema import LoanApplicationCreate
 
 

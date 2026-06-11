@@ -2,7 +2,7 @@ import uuid
 from langchain_core.messages import AIMessage, SystemMessage
 
 from src.loan_sales_agent_shared.config import LLM
-from src.agent.state import LoanState
+from agent.state_and_graph.state import LoanState
 
 class MasterAgent:
     def __init__(self):

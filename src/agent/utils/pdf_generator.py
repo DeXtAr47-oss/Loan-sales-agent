@@ -3,7 +3,7 @@ from reportlab.pdfgen import canvas
 from datetime import datetime
 from langchain.tools import tool
 
-from src.agent.state import LoanState
+from agent.state_and_graph.state import LoanState
 from src.loan_sales_agent_shared.config import SANCTION_LETTER_PATH
 
 @tool
