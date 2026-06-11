@@ -1,6 +1,6 @@
 from langchain_core.messages import AIMessage, SystemMessage, HumanMessage
 
-from agent.state_and_graph.state import LoanState
+from src.agent.states.state import LoanState
 from src.loan_sales_agent_shared.config import LLM
 from src.loan_sales_agent_DL.repository.customer_repository import get_customer_by_email
 
