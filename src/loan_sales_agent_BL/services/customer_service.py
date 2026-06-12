@@ -59,7 +59,7 @@ def create_customer_service(db: Session, customer: CustomerCreate):
     return db_customer
 
 def update_customer_service(db: Session, id: uuid.UUID, customer: CustomerCreate):
-    db_customer, credit_score = get_customer_by_id(db, id)
+    db_customer, existing_credit_score = get_customer_by_id(db, id)
     if not db_customer:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -68,13 +68,14 @@ def update_customer_service(db: Session, id: uuid.UUID, customer: CustomerCreate
 
     try:
         update_data = customer.model_dump(exclude_unset=True)
-        return update_customer(db, db_customer, update_data)
+        updated_customer = update_customer(db, id, db_customer, update_data, existing_credit_score)
+        return updated_customer
 
     except Exception as e:
         db.rollback()
         raise HTTPException(
-            status_code = status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail = str(e)
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=str(e)
         )
 
 def delete_customer_service(db: Session, id: uuid.UUID):
@@ -105,7 +106,7 @@ def build_customer_response(customer, credit_score_raw) -> CustomerResponse:
         else:
             credit_score_response = CreditScoreResponse(
                 credit_score=credit_score_raw.credit_score,
-                credit_score_id=credit_score_raw.credit_score_id,
+                credit_score_id=credit_score_raw.credit_score_id,   
                 last_updated=getattr(credit_score_raw, 'last_updated', None)
             )
 

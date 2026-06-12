@@ -1,12 +1,14 @@
 from sqlalchemy.exc import SQLAlchemyError
 from pydantic import EmailStr
-from sqlalchemy.orm import Session, joinedload
+from sqlalchemy.orm import Session
 from passlib.context import CryptContext
 
 from src.loan_sales_agent_BL.schemas.customer_schema import CustomerCreate, CustomerBase
 from src.loan_sales_agent_DL.models import customer_model as models
 from src.loan_sales_agent_DL.models.credit_score_model import RelCreditScoreCustomer, CreditScore
-from src.loan_sales_agent_DL.repository.credit_score_repository import set_credit_score
+from src.loan_sales_agent_DL.repository.credit_score_repository import set_credit_score, update_credit_score
+
+from src.loan_sales_agent_BL.schemas.credit_score_schema import CreditScoreCreate
 import uuid
 
 pwd_context = CryptContext(
@@ -53,9 +55,9 @@ def get_customer_by_id(db: Session, cust_id: uuid.UUID):
     ).first()
 
     if result is None:
-        return None, None
-
-    return result[0], result[1]
+        return None
+    print(result)
+    return result
 
 def get_customer_by_email(db: Session, email_id: EmailStr):
     return (
@@ -97,8 +99,32 @@ def create_customer(db: Session, customer: CustomerCreate):
     return db_customer
 
 
-def update_customer(db: Session, db_customer: CustomerBase, update_data: dict):
+def update_customer(db: Session, customer_id: uuid.UUID, db_customer: CustomerCreate, update_data: dict, existing_credit_score):
     try:
+        credit_score_data = update_data.pop('credit_score', None)
+        if credit_score_data is not None:
+            if isinstance(credit_score_data, dict):
+                score_value = credit_score_data.get('credit_score')
+            else:
+                score_value = credit_score_data
+
+            if score_value is not None:
+                if existing_credit_score is not None:
+                    credit_score_update = CreditScoreCreate(credit_score=score_value)
+                    update_credit_score(
+                        db,
+                        credit_id=existing_credit_score.credit_score_id,
+                        credit_score=credit_score_update
+                    )
+                else:
+                    credit_score_create = CreditScoreCreate(credit_score=score_value)
+                    new_credit_score = set_credit_score(db, credit_score_create)
+                    new_rel = RelCreditScoreCustomer(
+                        credit_score_id=new_credit_score.credit_score_id,
+                        customer_id=customer_id
+                    )
+                    db.add(new_rel)
+
         for field, value in update_data.items():
             if hasattr(db_customer, field):
                 setattr(db_customer, field, value)
@@ -106,6 +132,7 @@ def update_customer(db: Session, db_customer: CustomerBase, update_data: dict):
         db.commit()
         db.refresh(db_customer)
         return db_customer
+
     except SQLAlchemyError as e:
         db.rollback()
         raise e

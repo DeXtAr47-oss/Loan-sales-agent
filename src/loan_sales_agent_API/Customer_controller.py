@@ -20,13 +20,13 @@ delete_customer_service
 
 router = APIRouter(
     prefix="/customers",
-    tags=["customers"],
+    tags=["Customer API"],
     include_in_schema=False
 )
 
 api_router = APIRouter(
     prefix="/api/customers",
-    tags=["customers"]
+    tags=["Customer API"]
 )
 
 @router.post("/", response_model=CustomerResponse, status_code=status.HTTP_201_CREATED)
