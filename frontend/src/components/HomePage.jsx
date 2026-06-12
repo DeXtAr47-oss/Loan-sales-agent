@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import {
   MessageCircle,
   Shield,
@@ -25,6 +24,7 @@ import {
 } from 'lucide-react';
 import AccountForm from './AccountForm';
 import SignInForm from './SignInForm';
+import ChatSidebar from './ChatSidebar';
 
 const EMI_RATE_DEFAULT = 11.5;
 
@@ -130,13 +130,15 @@ function FaqItem({ question, answer }) {
 }
 
 export default function HomePage() {
-  const navigate = useNavigate();
   const [eligAmount, setEligAmount] = useState('');
   const [eligIncome, setEligIncome] = useState('');
   const [authModal, setAuthModal] = useState(null); // 'signin' | 'signup' | null
+  const [chatOpen, setChatOpen] = useState(false);
+  const [chatPrefill, setChatPrefill] = useState('');
 
   const goToChat = (prefill) => {
-    navigate('/chat', { state: prefill ? { prefill } : undefined });
+    if (prefill) setChatPrefill(prefill);
+    setChatOpen(true);
   };
 
   const handleEligibilitySubmit = (e) => {
@@ -508,6 +510,12 @@ export default function HomePage() {
       {authModal === 'signup' && (
         <AccountForm onClose={() => setAuthModal(null)} />
       )}
+
+      <ChatSidebar
+        isOpen={chatOpen}
+        onClose={() => setChatOpen(false)}
+        prefill={chatPrefill}
+      />
     </div>
   );
-} 
+}

@@ -14,13 +14,34 @@ const safeJson = async (response) => {
   }
 };
 
-export const sendMessageToBackend = async (message) => {
-  const response = await fetch(`${API_BASE}/api/chat`, {
+export const sendMessageToBackend = async (message, options = {}) => {
+  const { thread_id, file } = options;
+
+  if (file) {
+    const formData = new FormData();
+    formData.append('message', message);
+    if (thread_id) formData.append('thread_id', thread_id);
+    formData.append('file', file);
+
+    const response = await fetch(`${API_BASE}/chat`, {
+      method: 'POST',
+      body: formData,
+    });
+
+    if (!response.ok) {
+      const error = await safeJson(response);
+      throw new Error(error.detail || `HTTP error! status: ${response.status}`);
+    }
+
+    return safeJson(response);
+  }
+
+  const response = await fetch(`${API_BASE}/chat`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ message }),
+    body: JSON.stringify({ message, thread_id }),
   });
 
   if (!response.ok) {
