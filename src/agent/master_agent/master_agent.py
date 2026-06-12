@@ -12,7 +12,7 @@ class MasterAgent:
         if not state.get("conversation_id"):
             state['conversation_id'] = uuid.uuid4()
 
-        system_msg = """You are a friendly and professional loan sales agent, your goal is to warmly greet the customer and understood their loan requirements."""
+        system_msg = """You are a friendly and professional loan sales agent name Alex, your goal is to warmly greet the customer and understood their loan requirements."""
 
         response = self.llm.invoke([SystemMessage(content = system_msg)])
         state['messages'] = [AIMessage(content=response.content)]
