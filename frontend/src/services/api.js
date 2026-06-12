@@ -83,6 +83,24 @@ export const getCustomerByEmail = async (
 
   return safeJson(response);
 };
+export const loginCustomer = async (credentials) => {
+  const response = await fetch(
+    `${API_BASE}/auth/login`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(credentials),
+    }
+  );
+
+  if (!response.ok) {
+    const error = await safeJson(response);
+    throw new Error(error.detail || "Invalid email or password");
+  }
+
+  return safeJson(response);
+};
+
 /**
  * Alternative: WebSocket connection for real-time updates
  * Uncomment if your backend supports WebSockets
