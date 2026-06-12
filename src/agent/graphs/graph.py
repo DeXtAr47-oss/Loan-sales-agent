@@ -1,7 +1,7 @@
 from langgraph.graph import StateGraph, END
 
 from src.loan_sales_agent_shared.config import DATABASE_URL
-from src.agent.state import LoanState
+from src.agent.states.state import LoanState
 from src.agent.master_agent.master_agent import MasterAgent
 from src.agent.sales_agent.sales_agent import SalesAgent
 from src.agent.verification_agent.verification_agent import VerificationAgent

@@ -1,6 +1,8 @@
-from langchain_ollama import ChatOllama
+from langchain_ollama import ChatOllama, OllamaEmbeddings
+from mcp.server.fastmcp import FastMCP
 import os
 from dotenv import load_dotenv
+from pinecone import Pinecone
 
 load_dotenv()
 
@@ -8,12 +10,18 @@ load_dotenv()
 LLM = ChatOllama(
     model = os.getenv("MODEL"),
     temperature=0.2,
-    num_predict=512,
+    num_predict=200,
     top_p=0.8,
     top_k=20
 )
 
-# Sanction letter stored path
+# Embedding model config
+EMBEDDING_MODEL = OllamaEmbeddings(
+    model = os.getenv('EMBEDDING'),
+    dimensions=1536
+)
+
+0#0 Sanction letter stored path
 os.makedirs(os.getenv("SANCTION_LETTER_PATH"), exist_ok=True)
 SANCTION_LETTER_PATH = os.getenv("SANCTION_LETTER_PATH")
 
@@ -29,3 +37,10 @@ MAX_CREDIT_SCORE = 900
 MIN_TENURE_MONTHS = 12
 MAX_TENURE_MONTHS = 60
 EMI_TO_SALARY_RATIO = 0.5
+
+# Vector Database
+pc = Pinecone(api_key=os.getenv("PINECONE_API_KEY"))
+INDEX = pc.Index("nbfc-customer-memory")
+
+# MCP
+MCP = FastMCP('Loan sales agent')

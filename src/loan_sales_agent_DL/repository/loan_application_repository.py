@@ -1,25 +1,25 @@
 from sqlalchemy.orm import Session
 from src.loan_sales_agent_BL.schemas.loan_application_schema import LoanApplicationCreate, LoanApplicationBase
-import models.loan_application_model as models
+from src.loan_sales_agent_DL.models.loan_application_model import LoanApplication
 
 def get_loan_applications(db: Session, cust_id: int):
     return (
-        db.query(models.LoanApplication)
-        .filter(models.LoanApplication.customer_id == cust_id)
+        db.query(LoanApplication)
+        .filter(LoanApplication.customer_id == cust_id)
         .all()
     )
 
 
 def get_loan_application(db: Session, application_id: int):
     return (
-        db.query(models.LoanApplication)
-        .filter(models.LoanApplication.application_id == application_id)
+        db.query(LoanApplication)
+        .filter(LoanApplication.application_id == application_id)
         .first()
     )
 
 
 def create_loan_application(db: Session, cust_id: int, application: LoanApplicationCreate):
-    db_application = models.LoanApplication(
+    db_application = LoanApplication(
         customer_id=cust_id,
         loan_amount=application.loan_amount,
         tenure_months=application.tenure_months,
@@ -37,7 +37,7 @@ def create_loan_application(db: Session, cust_id: int, application: LoanApplicat
 
 
 def update_conversation_history(db: Session, customer_id: int, conversation_history: LoanApplicationCreate):
-    db_conversation = db.query(models.LoanApplication).filter(models.LoanApplication.customer_id == customer_id).first()
+    db_conversation = db.query(LoanApplication).filter(LoanApplication.customer_id == customer_id).first()
     if db_conversation:
         db_conversation.conversaion_history = conversation_history.conversation_history
     db.commit()
