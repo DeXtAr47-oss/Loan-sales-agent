@@ -1,6 +1,7 @@
 from sqlalchemy.exc import SQLAlchemyError
 from pydantic import EmailStr
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
 from passlib.context import CryptContext
 
 from src.loan_sales_agent_BL.schemas.customer_schema import CustomerCreate, CustomerBase
@@ -16,58 +17,71 @@ pwd_context = CryptContext(
     deprecated="auto"
 )
 
-def get_all_customer(db: Session, skip: int = 0, limit: int = 100):
-    results = db.query(
-        models.Customer,
-        CreditScore
-    ).outerjoin(
-        RelCreditScoreCustomer,
-        models.Customer.customer_id == RelCreditScoreCustomer.customer_id
-    ).outerjoin(
-        CreditScore,
-        RelCreditScoreCustomer.credit_score_id == CreditScore.credit_score_id
-    ).filter(
-        models.Customer.is_deleted.is_(False)
-    ).offset(skip).limit(limit).all()
-
+async def get_all_customer(db: AsyncSession, skip: int = 0, limit: int = 100):
+    stmt = (
+        select(models.Customer, CreditScore)
+        .outerjoin(
+            RelCreditScoreCustomer,
+            models.Customer.customer_id == RelCreditScoreCustomer.customer_id
+        )
+        .outerjoin(
+            CreditScore,
+            RelCreditScoreCustomer.credit_score_id == CreditScore.credit_score_id
+        )
+        .where(
+            models.Customer.is_deleted.is_(False)
+        )
+        .offset(skip)
+        .limit(limit)
+    )
+    result = await db.execute(stmt)
 
     customers_map = {}
-    for customer, credit_score in results:
-        if customer.customer_id not in customers_map:
-            customers_map[customer.customer_id] = (customer, credit_score)
+    for customer, credit_score in result.all():
+        customers_map.setdefault(
+            customer.customer_id,
+            (customer, credit_score)
+        )
 
     return list(customers_map.values())
 
+async def get_customer_by_id(
+    db: AsyncSession,
+    cust_id: uuid.UUID
+):
+    stmt = (
+        select(models.Customer, CreditScore)
+        .outerjoin(
+            RelCreditScoreCustomer,
+            models.Customer.customer_id == RelCreditScoreCustomer.customer_id
+        )
+        .outerjoin(
+            CreditScore,
+            RelCreditScoreCustomer.credit_score_id == CreditScore.credit_score_id
+        )
+        .where(
+            models.Customer.customer_id == cust_id,
+            models.Customer.is_deleted.is_(False)
+        )
+    )
+    result = await db.execute(stmt)
+    return result.first()
 
-def get_customer_by_id(db: Session, cust_id: uuid.UUID):
-    result = db.query(
-        models.Customer,
-        CreditScore
-    ).outerjoin(
-        RelCreditScoreCustomer,
-        models.Customer.customer_id == RelCreditScoreCustomer.customer_id
-    ).outerjoin(
-        CreditScore,
-        RelCreditScoreCustomer.credit_score_id == CreditScore.credit_score_id
-    ).filter(
-        models.Customer.customer_id == cust_id,
-        models.Customer.is_deleted.is_(False)
-    ).first()
-
-    if result is None:
-        return None
-    print(result)
-    return result
-
-def get_customer_by_email(db: Session, email_id: EmailStr):
-    return (
-        db.query(models.Customer).filter(models.Customer.email == email_id,
-                                         models.Customer.is_deleted.is_(False))
-        .first()
+async def get_customer_by_email(db: AsyncSession, email_id: EmailStr):
+    stmt = (
+        select(models.Customer)
+        .where(
+            models.Customer.email == email_id,
+            models.Customer.is_deleted.is_(False)
+        )
     )
 
+    result = await db.execute(stmt)
+    customer = result.scalar_one_or_none()
+    return customer
 
-def create_customer(db: Session, customer: CustomerCreate):
+
+async def create_customer(db: AsyncSession, customer: CustomerCreate):
     hashed_pw = pwd_context.hash(customer.password)
     db_customer = models.Customer(
         customer_id=uuid.uuid4(),
@@ -82,10 +96,10 @@ def create_customer(db: Session, customer: CustomerCreate):
     )
 
     db.add(db_customer)
-    db.flush()
+    await db.flush()
 
     if customer.credit_score is not None:
-        new_credit_score = set_credit_score(db, customer.credit_score)
+        new_credit_score = await set_credit_score(db, customer.credit_score)
 
         rel_credit_score_customer = RelCreditScoreCustomer(
             customer_id=db_customer.customer_id,
@@ -93,75 +107,90 @@ def create_customer(db: Session, customer: CustomerCreate):
         )
         db.add(rel_credit_score_customer)
 
-    db.commit()
-    db.refresh(db_customer)
+    await db.commit()
+    await db.refresh(db_customer)
 
     return db_customer
 
 
-def update_customer(db: Session, customer_id: uuid.UUID, db_customer: CustomerCreate, update_data: dict, existing_credit_score):
+async def update_customer(
+    db: AsyncSession,
+    customer_id: uuid.UUID,
+    db_customer,
+    update_data: dict,
+    existing_credit_score
+):
     try:
-        credit_score_data = update_data.pop('credit_score', None)
+        credit_score_data = update_data.pop("credit_score", None)
+
         if credit_score_data is not None:
-            if isinstance(credit_score_data, dict):
-                score_value = credit_score_data.get('credit_score')
-            else:
-                score_value = credit_score_data
+            score_value = (
+                credit_score_data.get("credit_score")
+                if isinstance(credit_score_data, dict)
+                else credit_score_data
+            )
 
             if score_value is not None:
-                if existing_credit_score is not None:
-                    credit_score_update = CreditScoreCreate(credit_score=score_value)
-                    update_credit_score(
+
+                if existing_credit_score:
+                    credit_score_update = CreditScoreCreate(
+                        credit_score=score_value
+                    )
+
+                    await update_credit_score(
                         db,
                         credit_id=existing_credit_score.credit_score_id,
                         credit_score=credit_score_update
                     )
+
                 else:
-                    credit_score_create = CreditScoreCreate(credit_score=score_value)
-                    new_credit_score = set_credit_score(db, credit_score_create)
-                    new_rel = RelCreditScoreCustomer(
-                        credit_score_id=new_credit_score.credit_score_id,
-                        customer_id=customer_id
+                    credit_score_create = CreditScoreCreate(
+                        credit_score=score_value
                     )
-                    db.add(new_rel)
 
+                    new_credit_score = await set_credit_score(
+                        db,
+                        credit_score_create
+                    )
+
+                    db.add(
+                        RelCreditScoreCustomer(
+                            customer_id=customer_id,
+                            credit_score_id=new_credit_score.credit_score_id
+                        )
+                    )
+
+        # Update customer fields
         for field, value in update_data.items():
-            if hasattr(db_customer, field):
-                setattr(db_customer, field, value)
+            setattr(db_customer, field, value)
 
-        db.commit()
-        db.refresh(db_customer)
+        await db.commit()
+        await db.refresh(db_customer)
+
         return db_customer
 
-    except SQLAlchemyError as e:
-        db.rollback()
-        raise e
+    except SQLAlchemyError:
+        await db.rollback()
+        raise
 
-
-def delete_customer(db: Session, db_customer: CustomerBase):
+async def delete_customer(db: AsyncSession, db_customer: CustomerBase):
     db_customer.is_deleted = True
-    db.commit()
-    db.refresh(db_customer)
+    await db.commit()
+    await db.refresh(db_customer)
 
-def check_email(customer: CustomerBase, db: Session):
-    existing_email = (
-        db.query(models.Customer)
-        .filter(models.Customer.email == customer.email,
-                models.Customer.is_deleted.is_(False))
-        .first()
-    )
+async def check_email(customer: CustomerBase, db: AsyncSession):
+    stmt = select(models.Customer).where(models.Customer.email == customer.email, models.Customer.is_deleted.is_(False))
+    result = await db.execute(stmt)
+    existing_email = result.scalar_one_or_none()
     if existing_email is not None:
         return True
     else:
         return False
 
-def check_phone_number(customer: CustomerBase, db: Session):
-    existing_phone_number = (
-        db.query(models.Customer)
-        .filter(models.Customer.phone == customer.phone,
-                models.Customer.is_deleted.is_(False))
-        .first()
-    )
+async def check_phone_number(customer: CustomerBase, db: AsyncSession):
+    stmt = select(models.Customer).where(models.Customer.phone == customer.phone, models.Customer.is_deleted.is_(False))
+    result = await db.execute(stmt)
+    existing_phone_number = result.scalar_one_or_none()
     if existing_phone_number is not None:
         return True
     else:

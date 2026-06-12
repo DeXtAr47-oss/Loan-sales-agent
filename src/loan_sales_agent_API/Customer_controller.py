@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, Query, status
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 from pydantic import EmailStr
 from typing import List
 import uuid
@@ -30,77 +30,77 @@ api_router = APIRouter(
 )
 
 @router.post("/", response_model=CustomerResponse, status_code=status.HTTP_201_CREATED)
-def create_customer_controller(
+async def create_customer_controller(
     customer: CustomerCreate,
-    db: Session = Depends(get_db)
+    db: AsyncSession = Depends(get_db)
 ):
-    new_customer = create_customer_service(db, customer)
+    new_customer = await create_customer_service(db, customer)
     return new_customer
 
 @api_router.post("/", response_model=CustomerResponse, status_code=status.HTTP_201_CREATED)
-def create_customer_controller(
+async def create_customer_controller(
     customer: CustomerCreate,
-    db: Session = Depends(get_db)
+    db: AsyncSession = Depends(get_db)
 ):
-    new_customer = create_customer_service(db, customer)
+    new_customer = await create_customer_service(db, customer)
     return new_customer
 
 @api_router.get("/", response_model=List[CustomerResponse], status_code=status.HTTP_200_OK)
-def get_all_customers(
+async def get_all_customers(
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=1000),
-    db: Session = Depends(get_db)
+    db: AsyncSession = Depends(get_db)
 ):
-    return get_all_customer_service(db, skip, limit)
+    return await get_all_customer_service(db, skip, limit)
 
 @router.get("/{customer_id}", response_model=CustomerResponse, status_code=status.HTTP_200_OK)
-def get_id(
+async def get_id(
     customer_id: uuid.UUID,
-    db: Session = Depends(get_db)
+    db: AsyncSession = Depends(get_db)
 ):
-    return get_by_id_customer_service(db, customer_id)
+    return await get_by_id_customer_service(db, customer_id)
 
 @api_router.get("/{customer_id}", response_model=CustomerResponse, status_code=status.HTTP_200_OK)
-def get_id(
+async def get_id(
     customer_id: uuid.UUID,
-    db: Session = Depends(get_db)
+    db: AsyncSession = Depends(get_db)
 ):
-    return get_by_id_customer_service(db, customer_id)
+    return await get_by_id_customer_service(db, customer_id)
 
 @router.get("/email/{customer_email}", response_model=CustomerResponse, status_code=status.HTTP_200_OK)
-def get_email(
+async def get_email(
         customer_email: EmailStr,
-        db: Session = Depends(get_db)
+        db: AsyncSession = Depends(get_db)
 ):
-    return get_by_email_customer_service(db, customer_email)
+    return await get_by_email_customer_service(db, customer_email)
 
 @api_router.get("/email/{customer_email}", response_model=CustomerResponse, status_code=status.HTTP_200_OK)
-def get_email(
+async def get_email(
         customer_email: EmailStr,
-        db: Session = Depends(get_db)
+        db: AsyncSession = Depends(get_db)
 ):
-    return get_by_email_customer_service(db, customer_email)
+    return await get_by_email_customer_service(db, customer_email)
 
 @router.put("/{customer_id}", status_code=status.HTTP_204_NO_CONTENT)
-def update(
+async def update(
         customer_id: uuid.UUID,
         customer: CustomerCreate,
-        db: Session = Depends(get_db)
+        db: AsyncSession = Depends(get_db)
 ):
-    update_customer_service(db, customer_id, customer)
+    await update_customer_service(db, customer_id, customer)
     return {"message": "customer updated"}
 
 @api_router.put("/{customer_id}", status_code=status.HTTP_204_NO_CONTENT)
-def update(
+async def update(
         customer_id: uuid.UUID,
         customer: CustomerCreate,
-        db: Session = Depends(get_db)
+        db: AsyncSession = Depends(get_db)
 ):
-    update_customer_service(db, customer_id, customer)
+    await update_customer_service(db, customer_id, customer)
     return {"message": "customer updated"}
 
 
 @api_router.delete("/{customer_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete(customer_id: uuid.UUID, db: Session = Depends(get_db)):
-    delete_customer_service(db, customer_id)
+async def delete(customer_id: uuid.UUID, db: AsyncSession = Depends(get_db)):
+    await delete_customer_service(db, customer_id)
     return {"message": "customer deleted"}

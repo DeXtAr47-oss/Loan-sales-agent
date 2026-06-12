@@ -5,6 +5,7 @@ from fastapi.responses import FileResponse
 
 from src.loan_sales_agent_API.Customer_controller import router, api_router
 from src.loan_sales_agent_API.Chat_controller import chat_router
+from src.loan_sales_agent_API.Credit_score_controller import credit_score_api_router
 from src.loan_sales_agent_DL import *
 app = FastAPI()
 
@@ -18,11 +19,8 @@ app.add_middleware(
 
 app.include_router(router)
 app.include_router(api_router)
+app.include_router(credit_score_api_router)
 app.include_router(chat_router)
-
-app.get("/")
-def home():
-    return {"message": "Loan sales agent home page"}
 
 app.mount(
     "/static",

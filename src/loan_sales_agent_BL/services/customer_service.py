@@ -1,5 +1,5 @@
 from fastapi import HTTPException, status
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 from pydantic import EmailStr
 import uuid
 
@@ -16,50 +16,51 @@ from src.loan_sales_agent_DL.repository.customer_repository import (
     check_phone_number
 )
 
-def get_all_customer_service(db: Session, skip: int = 0, limit: int = 100):
-    customer_tuples = get_all_customer(db, skip, limit)
+async def get_all_customer_service(db: AsyncSession, skip: int = 0, limit: int = 100):
+    customer_tuples = await get_all_customer(db, skip, limit)
 
     return [
         build_customer_response(customer, credit_score)
         for customer, credit_score in customer_tuples
     ]
 
-def get_by_id_customer_service(db: Session, cust_id: uuid.UUID):
-    customer, credit_score = get_customer_by_id(db, cust_id)
-    if customer is None:
+async def get_by_id_customer_service(db: AsyncSession, cust_id: uuid.UUID):
+    result = await get_customer_by_id(db, cust_id)
+    if result is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Customer not found")
+    customer, credit_score = result
     return build_customer_response(customer, credit_score)
 
-def get_by_email_customer_service(db: Session, email: EmailStr):
-    customer = get_customer_by_email(db, email)
+async def get_by_email_customer_service(db: AsyncSession, email: EmailStr):
+    customer = await get_customer_by_email(db, email)
     if customer is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Customer not found")
     return customer
 
-def create_customer_service(db: Session, customer: CustomerCreate):
-    if check_email(customer, db):
+async def create_customer_service(db: AsyncSession, customer: CustomerCreate):
+    if await check_email(customer, db):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Customer already exists")
 
-    if check_phone_number(customer, db):
+    if await check_phone_number(customer, db):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Customer already exists"
         )
 
     try:
-        db_customer = create_customer(db, customer)
+        db_customer = await create_customer(db, customer)
     except Exception as e:
-        db.rollback()
+        await db.rollback()
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=str(e)
         )
     return db_customer
 
-def update_customer_service(db: Session, id: uuid.UUID, customer: CustomerCreate):
-    db_customer, existing_credit_score = get_customer_by_id(db, id)
+async def update_customer_service(db: AsyncSession, id: uuid.UUID, customer: CustomerCreate):
+    db_customer, existing_credit_score = await get_customer_by_id(db, id)
     if not db_customer:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -68,27 +69,28 @@ def update_customer_service(db: Session, id: uuid.UUID, customer: CustomerCreate
 
     try:
         update_data = customer.model_dump(exclude_unset=True)
-        updated_customer = update_customer(db, id, db_customer, update_data, existing_credit_score)
+        updated_customer = await update_customer(db, id, db_customer, update_data, existing_credit_score)
         return updated_customer
 
     except Exception as e:
-        db.rollback()
+        await db.rollback()
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=str(e)
         )
 
-def delete_customer_service(db: Session, id: uuid.UUID):
-    db_customer = get_customer_by_id(db, id)
-    if db_customer is None:
+async def delete_customer_service(db: AsyncSession, id: uuid.UUID):
+    customer_tuple = await get_customer_by_id(db, id)
+    if customer_tuple is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Customer not found"
         )
+    db_customer, _ = customer_tuple
     try:
-        delete_customer(db, db_customer)
+        await delete_customer(db, db_customer)
     except Exception as e:
-        db.rollback()
+        await db.rollback()
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail = str(e)
