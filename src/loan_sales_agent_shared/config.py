@@ -10,7 +10,7 @@ load_dotenv()
 LLM = ChatOllama(
     model = os.getenv("MODEL"),
     temperature=0.2,
-    num_predict=512,
+    num_predict=200,
     top_p=0.8,
     top_k=20
 )
