@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   MessageCircle,
   Shield,
@@ -20,11 +21,16 @@ import {
   X,
   ArrowRight,
   LogIn,
-  UserPlus
+  UserPlus,
+  UserCircle,
+  LogOut,
+  UserCog
 } from 'lucide-react';
 import AccountForm from './AccountForm';
-import SignInForm from './SignInForm';
+import SignInModal from './SignInPage';
+import EditCustomerForm from './EditCustomerForm';
 import ChatSidebar from './ChatSidebar';
+import { useAuth } from '../context/AuthContext';
 
 const EMI_RATE_DEFAULT = 11.5;
 
@@ -132,9 +138,24 @@ function FaqItem({ question, answer }) {
 export default function HomePage() {
   const [eligAmount, setEligAmount] = useState('');
   const [eligIncome, setEligIncome] = useState('');
+  const navigate = useNavigate();
+  const { user, isLoggedIn, logout } = useAuth();
   const [authModal, setAuthModal] = useState(null); // 'signin' | 'signup' | null
   const [chatOpen, setChatOpen] = useState(false);
   const [chatPrefill, setChatPrefill] = useState('');
+  const [profileOpen, setProfileOpen] = useState(false);
+  const [editCustomerOpen, setEditCustomerOpen] = useState(false);
+  const profileRef = useRef(null);
+
+  useEffect(() => {
+    const handler = (e) => {
+      if (profileRef.current && !profileRef.current.contains(e.target)) {
+        setProfileOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
 
   const goToChat = (prefill) => {
     if (prefill) setChatPrefill(prefill);
@@ -164,14 +185,56 @@ export default function HomePage() {
           <a href="#faq">FAQs</a>
         </div>
         <div className="navbar-actions">
-          <button className="btn-ghost" onClick={() => setAuthModal('signin')}>
-            <LogIn size={16} />
-            Sign In
-          </button>
-          <button className="btn-primary" onClick={() => setAuthModal('signup')}>
-            <UserPlus size={16} />
-            Create Account
-          </button>
+          {isLoggedIn ? (
+            <div className="profile-menu" ref={profileRef}>
+              <button
+                className="profile-trigger"
+                onClick={() => setProfileOpen(!profileOpen)}
+              >
+                <div className="profile-avatar">
+                  {user?.name?.[0]?.toUpperCase() || <UserCircle size={18} />}
+                </div>
+                <span className="profile-name">{user?.name || 'Account'}</span>
+                <ChevronDown size={16} className={`profile-chevron ${profileOpen ? 'open' : ''}`} />
+              </button>
+
+              {profileOpen && (
+                <div className="profile-dropdown">
+                  <div className="profile-dropdown-header">
+                    <span className="dropdown-name">{user?.name}</span>
+                    <span className="dropdown-email">{user?.email}</span>
+                  </div>
+                  <div className="profile-dropdown-divider" />
+                  <button
+                    className="dropdown-item"
+                    onClick={() => { setEditCustomerOpen(true); setProfileOpen(false); }}
+                  >
+                    <UserCog size={16} />
+                    Edit Profile
+                  </button>
+                  <div className="profile-dropdown-divider" />
+                  <button
+                    className="dropdown-item danger"
+                    onClick={() => { logout(); setProfileOpen(false); }}
+                  >
+                    <LogOut size={16} />
+                    Sign Out
+                  </button>
+                </div>
+              )}
+            </div>
+          ) : (
+            <>
+              <button className="btn-ghost" onClick={() => setAuthModal('signin')}>
+                <LogIn size={16} />
+                Sign In
+              </button>
+              <button className="btn-primary" onClick={() => setAuthModal('signup')}>
+                <UserPlus size={16} />
+                Create Account
+              </button>
+            </>
+          )}
         </div>
       </nav>
 
@@ -501,14 +564,18 @@ export default function HomePage() {
 
       {/* AUTH MODALS */}
       {authModal === 'signin' && (
-        <SignInForm
+        <SignInModal
           onClose={() => setAuthModal(null)}
           onSwitchToSignUp={() => setAuthModal('signup')}
-          onSuccess={() => goToChat()}
         />
       )}
       {authModal === 'signup' && (
         <AccountForm onClose={() => setAuthModal(null)} />
+      )}
+
+      {/* EDIT CUSTOMER MODAL */}
+      {editCustomerOpen && (
+        <EditCustomerForm onClose={() => setEditCustomerOpen(false)} />
       )}
 
       <ChatSidebar
