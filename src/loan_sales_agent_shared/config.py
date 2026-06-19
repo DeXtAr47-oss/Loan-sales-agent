@@ -3,8 +3,14 @@ from mcp.server.fastmcp import FastMCP
 import os
 from dotenv import load_dotenv
 from pinecone import Pinecone
+from passlib.context import CryptContext
 
 load_dotenv()
+
+pwd_context = CryptContext(
+    schemes=["bcrypt"],
+    deprecated="auto"
+)
 
 # LLM config
 LLM = ChatOllama(
@@ -44,3 +50,8 @@ INDEX = pc.Index("nbfc-customer-memory")
 
 # MCP
 MCP = FastMCP('Loan sales agent')
+
+# Authentication
+AUTH_KEY = "loan_sales_agent_secret_key"
+ALGORITHM = "HS256"
+ACCESS_TOKEN_EXPIRE_MINUTES = 30
