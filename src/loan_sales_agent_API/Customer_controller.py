@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, Query, status
+from fastapi import APIRouter, Depends, Query, status, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from pydantic import EmailStr
 from typing import List
@@ -15,8 +15,11 @@ get_by_email_customer_service,
 get_by_id_customer_service,
 create_customer_service,
 update_customer_service,
-delete_customer_service
+delete_customer_service,
+build_customer_response
 )
+
+from src.loan_sales_agent_BL.services.authentication_service import get_current_user
 
 router = APIRouter(
     prefix="/customers",
@@ -53,6 +56,22 @@ async def get_all_customers(
 ):
     return await get_all_customer_service(db, skip, limit)
 
+@router.get(
+    "/me",
+    response_model=CustomerResponse,
+    status_code=status.HTTP_200_OK
+)
+async def get_current_customer(
+    db: AsyncSession = Depends(get_db),
+    current_user=Depends(get_current_user)
+):
+    customer, credit_score = current_user
+
+    return build_customer_response(
+        customer,
+        credit_score
+    )
+
 @router.get("/{customer_id}", response_model=CustomerResponse, status_code=status.HTTP_200_OK)
 async def get_id(
     customer_id: uuid.UUID,
@@ -81,13 +100,14 @@ async def get_email(
 ):
     return await get_by_email_customer_service(db, customer_email)
 
-@router.put("/{customer_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.put("/me", status_code=status.HTTP_204_NO_CONTENT)
 async def update(
-        customer_id: uuid.UUID,
         customer: CustomerCreate,
-        db: AsyncSession = Depends(get_db)
+        db: AsyncSession = Depends(get_db),
+        current_user = Depends(get_current_user)
 ):
-    await update_customer_service(db, customer_id, customer)
+    user, _ = current_user
+    await update_customer_service(db, user.customer_id, customer)
     return {"message": "customer updated"}
 
 @api_router.put("/{customer_id}", status_code=status.HTTP_204_NO_CONTENT)
