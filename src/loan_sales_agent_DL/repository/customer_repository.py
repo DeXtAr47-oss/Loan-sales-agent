@@ -2,20 +2,14 @@ from sqlalchemy.exc import SQLAlchemyError
 from pydantic import EmailStr
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
-from passlib.context import CryptContext
 
 from src.loan_sales_agent_BL.schemas.customer_schema import CustomerCreate, CustomerBase
 from src.loan_sales_agent_DL.models import customer_model as models
 from src.loan_sales_agent_DL.models.credit_score_model import RelCreditScoreCustomer, CreditScore
 from src.loan_sales_agent_DL.repository.credit_score_repository import set_credit_score, update_credit_score
-
 from src.loan_sales_agent_BL.schemas.credit_score_schema import CreditScoreCreate
+from src.loan_sales_agent_shared.config import pwd_context
 import uuid
-
-pwd_context = CryptContext(
-    schemes=["bcrypt"],
-    deprecated="auto"
-)
 
 async def get_all_customer(db: AsyncSession, skip: int = 0, limit: int = 100):
     stmt = (
@@ -69,16 +63,28 @@ async def get_customer_by_id(
 
 async def get_customer_by_email(db: AsyncSession, email_id: EmailStr):
     stmt = (
-        select(models.Customer)
+        select(models.Customer, CreditScore)
+        .outerjoin(
+            RelCreditScoreCustomer,
+            models.Customer.customer_id == RelCreditScoreCustomer.customer_id
+        )
+        .outerjoin(
+            CreditScore,
+            RelCreditScoreCustomer.credit_score_id == CreditScore.credit_score_id
+        )
         .where(
             models.Customer.email == email_id,
             models.Customer.is_deleted.is_(False)
         )
     )
-
     result = await db.execute(stmt)
-    customer = result.scalar_one_or_none()
-    return customer
+    row = result.first()
+
+    if row is None:
+        return None
+    customer, credit_score = row
+
+    return customer, credit_score
 
 
 async def create_customer(db: AsyncSession, customer: CustomerCreate):
