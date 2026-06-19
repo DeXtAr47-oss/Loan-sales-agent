@@ -14,6 +14,17 @@ const safeJson = async (response) => {
   }
 };
 
+const getAuthHeaders = () => {
+  const token = sessionStorage.getItem("access_token");
+
+  return {
+    "Content-Type": "application/json",
+    ...(token && {
+      Authorization: `Bearer ${token}`
+    })
+  };
+};
+
 export const sendMessageToBackend = async (message, options = {}) => {
   const { thread_id, file } = options;
 
@@ -23,8 +34,11 @@ export const sendMessageToBackend = async (message, options = {}) => {
     if (thread_id) formData.append('thread_id', thread_id);
     formData.append('file', file);
 
+    const token = sessionStorage.getItem( "access_token" );
+
     const response = await fetch(`${API_BASE}/chat`, {
       method: 'POST',
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
       body: formData,
     });
 
@@ -38,9 +52,7 @@ export const sendMessageToBackend = async (message, options = {}) => {
 
   const response = await fetch(`${API_BASE}/chat`, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
+    headers: getAuthHeaders(),
     body: JSON.stringify({ message, thread_id }),
   });
 
@@ -57,9 +69,7 @@ export const createCustomer = async (customerData) => {
     `${API_BASE}/customers/`,
     {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers: getAuthHeaders(),
       body: JSON.stringify(customerData),
     }
   );
@@ -77,7 +87,7 @@ export const updateCustomer = async (customerId, customerData) => {
     `${API_BASE}/customers/${customerId}`,
     {
       method: "PUT",
-      headers: { "Content-Type": "application/json" },
+      headers: getAuthHeaders(),
       body: JSON.stringify(customerData),
     }
   );
@@ -94,7 +104,8 @@ export const getCustomerByEmail = async (
 ) => {
 
   const response = await fetch(
-    `${API_BASE}/customers/email/${email}`
+    `${API_BASE}/customers/email/${email}`,
+      { method: "GET", headers: getAuthHeaders() }
   );
 
   if (!response.ok) {
@@ -106,7 +117,7 @@ export const getCustomerByEmail = async (
 };
 export const loginCustomer = async (credentials) => {
   const response = await fetch(
-    `${API_BASE}/auth/login`,
+    `${API_BASE}/signin/`,
     {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -117,6 +128,61 @@ export const loginCustomer = async (credentials) => {
   if (!response.ok) {
     const error = await safeJson(response);
     throw new Error(error.detail || "Invalid email or password");
+  }
+
+  return safeJson(response);
+};
+
+export const logoutCustomer = () => {
+  sessionStorage.removeItem( "access_token" );
+  sessionStorage.removeItem( "abc_finance_user" );
+};
+
+export const getCurrentCustomer = async () => {
+
+  const response = await fetch(
+    `${API_BASE}/customers/me`,
+    {
+      method: "GET",
+      headers: getAuthHeaders()
+    }
+  );
+
+  if (!response.ok) {
+
+    const error = await safeJson(response);
+
+    throw new Error(
+      error.detail ||
+      "Failed to fetch customer"
+    );
+  }
+
+  return safeJson(response);
+};
+
+
+export const updateCurrentCustomer = async (
+  customerData
+) => {
+
+  const response = await fetch(
+    `${API_BASE}/customers/me`,
+    {
+      method: "PUT",
+      headers: getAuthHeaders(),
+      body: JSON.stringify(customerData)
+    }
+  );
+
+  if (!response.ok) {
+
+    const error = await safeJson(response);
+
+    throw new Error(
+      error.detail ||
+      "Failed to update customer"
+    );
   }
 
   return safeJson(response);
