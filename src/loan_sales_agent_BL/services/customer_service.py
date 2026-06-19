@@ -32,10 +32,11 @@ async def get_by_id_customer_service(db: AsyncSession, cust_id: uuid.UUID):
     return build_customer_response(customer, credit_score)
 
 async def get_by_email_customer_service(db: AsyncSession, email: EmailStr):
-    customer = await get_customer_by_email(db, email)
-    if customer is None:
+    result = await get_customer_by_email(db, email)
+    if result is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Customer not found")
-    return customer
+    customer, credit_score = result
+    return build_customer_response(customer, credit_score)
 
 async def create_customer_service(db: AsyncSession, customer: CustomerCreate):
     if await check_email(customer, db):
