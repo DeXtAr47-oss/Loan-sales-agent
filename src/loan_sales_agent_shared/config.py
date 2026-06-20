@@ -3,8 +3,14 @@ from mcp.server.fastmcp import FastMCP
 import os
 from dotenv import load_dotenv
 from pinecone import Pinecone
+from passlib.context import CryptContext
 
 load_dotenv()
+
+pwd_context = CryptContext(
+    schemes=["bcrypt"],
+    deprecated="auto"
+)
 
 # LLM config
 LLM = ChatOllama(
@@ -26,7 +32,7 @@ os.makedirs(os.getenv("SANCTION_LETTER_PATH"), exist_ok=True)
 SANCTION_LETTER_PATH = os.getenv("SANCTION_LETTER_PATH")
 
 # Database Config
-DATABASE_URL = f"postgresql://{os.getenv('POSTGRES_USER')}:{os.getenv('POSTGRES_PASSWORD')}@{os.getenv('POSTGRES_HOST')}:{os.getenv('POSTGRES_PORT')}/{os.getenv('POSTGRES_DB')}"
+DATABASE_URL = f"postgresql+asyncpg://{os.getenv('POSTGRES_USER')}:{os.getenv('POSTGRES_PASSWORD')}@{os.getenv('POSTGRES_HOST')}:{os.getenv('POSTGRES_PORT')}/{os.getenv('POSTGRES_DB')}"
 TEST_DATABASE_URL = f"postgresql://{os.getenv('POSTGRES_USER')}:{os.getenv('POSTGRES_PASSWORD')}@{os.getenv('POSTGRES_HOST')}:{os.getenv('POSTGRES_PORT')}/nbfc_test_database"
 os.makedirs(os.getenv('DB_PATH'), exist_ok=True)
 
@@ -44,3 +50,8 @@ INDEX = pc.Index("nbfc-customer-memory")
 
 # MCP
 MCP = FastMCP('Loan sales agent')
+
+# Authentication
+AUTH_KEY = "loan_sales_agent_secret_key"
+ALGORITHM = "HS256"
+ACCESS_TOKEN_EXPIRE_MINUTES = 30

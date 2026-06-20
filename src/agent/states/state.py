@@ -30,7 +30,7 @@ class LoanState(TypedDict):
     salary_slip_uploaded: bool
     salary_amount: Optional[float]
 
-    # Decission
+    # Decision
     pre_approved_limit: Optional[Decimal]
     credit_score: Optional[int]
     application_id: Optional[str]
