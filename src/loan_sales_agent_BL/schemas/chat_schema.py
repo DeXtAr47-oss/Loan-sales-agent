@@ -5,5 +5,6 @@ class ChatRequest(BaseModel):
     thread_id: str = 'default'
 
 class ChatResponse(BaseModel):
+    reply: str
     state: dict
 
