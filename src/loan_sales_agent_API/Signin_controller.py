@@ -13,7 +13,7 @@ signin_router = APIRouter(
 
 api_signin_router = APIRouter(
     prefix="/api/signin",
-    tags=["Signin"],
+    tags=["Signin API"],
 )
 
 @api_signin_router.post("/", response_model=SigninResponse, status_code=status.HTTP_201_CREATED)
