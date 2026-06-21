@@ -35,8 +35,13 @@ async def get_by_email_customer_service(db: AsyncSession, email: EmailStr):
     result = await get_customer_by_email(db, email)
     if result is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Customer not found")
-    customer, credit_score = result
-    return build_customer_response(customer, credit_score)
+
+    credit_score = (
+        result.credit_score_rel.credit_score
+        if result.credit_score_rel
+        else None
+    )
+    return build_customer_response(result, credit_score)
 
 async def create_customer_service(db: AsyncSession, customer: CustomerCreate):
     if await check_email(customer, db):
