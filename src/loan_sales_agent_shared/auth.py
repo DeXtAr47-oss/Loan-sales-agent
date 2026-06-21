@@ -23,5 +23,5 @@ def verify_token(token: str):
             algorithms=[ALGORITHM]
         )
         return payload
-    except JWTError as e:
+    except JWTError:
         return None 
