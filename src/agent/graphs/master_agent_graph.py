@@ -4,9 +4,7 @@ from src.agent.states.state import LoanState
 from src.agent.master_agent.master_agent import MasterAgent
 from src.agent.graphs.create_workflow import WorkflowBuilder
 
-from sqlalchemy.orm import Session
-
-def create_master_agent_workflow(db: Session):
+def create_master_agent_workflow():
     master_agent = MasterAgent()
 
     workflow = WorkflowBuilder().workflow
