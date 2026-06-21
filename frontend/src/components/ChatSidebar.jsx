@@ -3,13 +3,7 @@ import { Bot, X, Send, Paperclip, Loader, User } from 'lucide-react';
 import { sendMessageToBackend } from '../services/api';
 
 export default function ChatSidebar({ isOpen, onClose, threadId = 'default', prefill = '' }) {
-  const [messages, setMessages] = useState([
-    {
-      id: 'welcome',
-      text: "Hello! I'm your ABC Finance Assistant. I can help you with loan applications, eligibility checks, interest rates, and repayment options. How can I assist you today?",
-      sender: 'bot'
-    }
-  ]);
+  const [messages, setMessages] = useState([]);
   const [input, setInput] = useState(prefill);
   const [file, setFile] = useState(null);
   const [isTyping, setIsTyping] = useState(false);
@@ -35,6 +29,30 @@ export default function ChatSidebar({ isOpen, onClose, threadId = 'default', pre
   useEffect(() => {
     if (prefill) setInput(prefill);
   }, [prefill]);
+
+  useEffect(() => {
+  if (isOpen && messages.length === 0) {
+      loadGreeting();
+    }
+  }, [isOpen]);
+
+  const loadGreeting = async () => {
+    setIsTyping(true);
+
+    try {
+      const response = await sendMessageToBackend("");
+
+      setMessages([
+        {
+          id: "welcome",
+          text: response.reply,
+          sender: "bot"
+        }
+      ]);
+    } finally {
+      setIsTyping(false);
+    }
+  };
 
   const handleSend = async () => {
     const text = input.trim();
