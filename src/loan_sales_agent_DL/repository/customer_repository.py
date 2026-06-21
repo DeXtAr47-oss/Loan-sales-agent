@@ -2,6 +2,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from pydantic import EmailStr
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
+from sqlalchemy.orm import joinedload
 
 from src.loan_sales_agent_BL.schemas.customer_schema import CustomerCreate, CustomerBase
 from src.loan_sales_agent_DL.models import customer_model as models
@@ -63,28 +64,20 @@ async def get_customer_by_id(
 
 async def get_customer_by_email(db: AsyncSession, email_id: EmailStr):
     stmt = (
-        select(models.Customer, CreditScore)
-        .outerjoin(
-            RelCreditScoreCustomer,
-            models.Customer.customer_id == RelCreditScoreCustomer.customer_id
-        )
-        .outerjoin(
-            CreditScore,
-            RelCreditScoreCustomer.credit_score_id == CreditScore.credit_score_id
+        select(models.Customer)
+        .options(
+            joinedload(models.Customer.credit_score_rel)
+            .joinedload(RelCreditScoreCustomer.credit_score)
         )
         .where(
             models.Customer.email == email_id,
             models.Customer.is_deleted.is_(False)
         )
     )
+
     result = await db.execute(stmt)
-    row = result.first()
 
-    if row is None:
-        return None
-    customer, credit_score = row
-
-    return customer, credit_score
+    return result.unique().scalar_one_or_none()
 
 
 async def create_customer(db: AsyncSession, customer: CustomerCreate):
