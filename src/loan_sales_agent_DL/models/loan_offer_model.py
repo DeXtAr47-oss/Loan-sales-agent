@@ -8,7 +8,7 @@ class LoanOffer(base):
     offer_id = Column(Integer, primary_key=True)
     amount_range_min = Column(Numeric(12, 2))
     amount_range_max = Column(Numeric(12, 2))
-    interest_rate = Column(Numeric(2, 1))
+    interest_rate = Column(Numeric(5, 2))
     tenure_months = Column(Integer)
     created_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
     is_deleted = Column(Boolean, default=False)
