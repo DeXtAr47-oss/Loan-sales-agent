@@ -8,6 +8,7 @@ from src.loan_sales_agent_API.Customer_controller import router, api_router
 from src.loan_sales_agent_API.Chat_controller import chat_router, api_chat_router
 from src.loan_sales_agent_API.Credit_score_controller import credit_score_api_router
 from src.loan_sales_agent_API.Signin_controller import signin_router, api_signin_router
+from src.loan_sales_agent_API.Loan_offer_controller import loan_offer_router_api
 from src.agent.graphs.master_agent_graph import create_master_agent_workflow
 
 @asynccontextmanager
@@ -32,6 +33,7 @@ app.include_router(chat_router)
 app.include_router(api_chat_router)
 app.include_router(api_signin_router)
 app.include_router(signin_router)
+app.include_router(loan_offer_router_api)
 
 app.mount(
     "/static",
