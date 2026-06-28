@@ -4,6 +4,7 @@ import os
 from dotenv import load_dotenv
 from pinecone import Pinecone
 from passlib.context import CryptContext
+from pathlib import Path
 
 load_dotenv()
 
@@ -27,13 +28,27 @@ EMBEDDING_MODEL = OllamaEmbeddings(
     dimensions=1536
 )
 
-0#0 Sanction letter stored path
+# Tool model config
+TOOL_MODEL = ChatOllama(
+    model = os.getenv('MODEL'),
+    temperature=0.0,
+    num_predict=1024,
+    top_p=0.9,
+    top_k=20,           
+    num_ctx=4096,
+    repeat_penalty=1.3,
+)
+
+# Sanction letter stored path
 os.makedirs(os.getenv("SANCTION_LETTER_PATH"), exist_ok=True)
 SANCTION_LETTER_PATH = os.getenv("SANCTION_LETTER_PATH")
 
+# Salary Slip stored path
+SALARY_SLIP_DIR = Path("/Users/pritamdas/python/projects/loan-sales-agent/src/loan_sales_agent_shared/data/")
+
 # Database Config
 DATABASE_URL = f"postgresql+asyncpg://{os.getenv('POSTGRES_USER')}:{os.getenv('POSTGRES_PASSWORD')}@{os.getenv('POSTGRES_HOST')}:{os.getenv('POSTGRES_PORT')}/{os.getenv('POSTGRES_DB')}"
-TEST_DATABASE_URL = f"postgresql://{os.getenv('POSTGRES_USER')}:{os.getenv('POSTGRES_PASSWORD')}@{os.getenv('POSTGRES_HOST')}:{os.getenv('POSTGRES_PORT')}/nbfc_test_database"
+CHECKPOINTER_DATABASE_URL = f"postgresql://{os.getenv('POSTGRES_USER')}:{os.getenv('POSTGRES_PASSWORD')}@{os.getenv('POSTGRES_HOST')}:{os.getenv('POSTGRES_PORT')}/{os.getenv('POSTGRES_DB')}"
 os.makedirs(os.getenv('DB_PATH'), exist_ok=True)
 
 # Loan Configuration

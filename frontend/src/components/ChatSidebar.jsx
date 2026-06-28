@@ -3,16 +3,13 @@ import { Bot, X, Send, Paperclip, Loader, User } from 'lucide-react';
 import { sendMessageToBackend } from '../services/api';
 
 export default function ChatSidebar({ isOpen, onClose, threadId = 'default', prefill = '' }) {
-  const [messages, setMessages] = useState([
-    {
-      id: 'welcome',
-      text: "Hello! I'm your ABC Finance Assistant. I can help you with loan applications, eligibility checks, interest rates, and repayment options. How can I assist you today?",
-      sender: 'bot'
-    }
-  ]);
+  const [messages, setMessages] = useState([]);
   const [input, setInput] = useState(prefill);
   const [file, setFile] = useState(null);
   const [isTyping, setIsTyping] = useState(false);
+  const [activeThreadId, setActiveThreadId] = useState(
+    threadId && threadId !== 'default' ? threadId : null
+  );
 
   const messagesEndRef = useRef(null);
   const fileInputRef = useRef(null);
@@ -36,6 +33,34 @@ export default function ChatSidebar({ isOpen, onClose, threadId = 'default', pre
     if (prefill) setInput(prefill);
   }, [prefill]);
 
+  useEffect(() => {
+  if (isOpen && messages.length === 0) {
+      loadGreeting();
+    }
+  }, [isOpen]);
+
+  const loadGreeting = async () => {
+    setIsTyping(true);
+
+    try {
+      const response = await sendMessageToBackend("", {
+        thread_id: activeThreadId
+      });
+      const responseThreadId = response.state?.conversation_id;
+      if (responseThreadId) setActiveThreadId(responseThreadId);
+
+      setMessages([
+        {
+          id: "welcome",
+          text: response.reply,
+          sender: "bot"
+        }
+      ]);
+    } finally {
+      setIsTyping(false);
+    }
+  };
+
   const handleSend = async () => {
     const text = input.trim();
     if (!text && !file) return;
@@ -55,15 +80,19 @@ export default function ChatSidebar({ isOpen, onClose, threadId = 'default', pre
 
     try {
       const response = await sendMessageToBackend(text, {
-        thread_id: threadId,
+        thread_id: activeThreadId,
         file: attachedFile
       });
+      const responseThreadId = response.state?.conversation_id;
+      if (responseThreadId) setActiveThreadId(responseThreadId);
 
       const botMessage = {
         id: Date.now().toString() + '-bot',
         text: response.reply || response.message || response.text ||
           "I'm processing your request. One moment please.",
-        sender: 'bot'
+        sender: 'bot',
+        downloadUrl: response.state?.sanction_letter_url,
+        downloadLabel: response.state?.sanction_letter_url ? 'Download sanction letter' : null
       };
       setMessages(prev => [...prev, botMessage]);
     } catch (error) {
@@ -128,6 +157,17 @@ export default function ChatSidebar({ isOpen, onClose, threadId = 'default', pre
               )}
               <div className="bubble-content">
                 <p>{message.text}</p>
+                {message.downloadUrl && (
+                  <a
+                    href={message.downloadUrl}
+                    className="download-link"
+                    download
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    {message.downloadLabel || 'Download PDF'}
+                  </a>
+                )}
               </div>
               {message.sender === 'user' && (
                 <div className="bubble-avatar user-avatar">

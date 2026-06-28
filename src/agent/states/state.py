@@ -1,42 +1,74 @@
-from typing import TypedDict, Annotated, Optional
 from decimal import Decimal
+from typing import Annotated, Optional, TypedDict
 from uuid import UUID
-import operator
 
-class LoanState(TypedDict):
-    
-    # conversation
-    messages: Annotated[list, operator.add]
+from langchain_core.messages import BaseMessage
+from langgraph.graph.message import add_messages
+
+
+class ConversationState(TypedDict):
+    messages: Annotated[list[BaseMessage], add_messages]
     conversation_id: UUID
+    next_agent: Optional[str]
 
-    # Customer info
-    customer_id: UUID
+
+class CustomerState(TypedDict, total=False):
+    customer_id: Optional[UUID]
     customer_name: Optional[str]
     customer_email: Optional[str]
     customer_data: Optional[dict]
-    customer_verified: Optional[bool]
+    credit_score: Optional[int]
+    customer_verified: bool
 
-    # Loan details
-    loan_amount: Decimal
-    loan_type: str
-    tenure_months: int
-    interest_rate: Decimal
-    monthly_emi: Decimal
 
-    # process flags
+class SalesAgentState(TypedDict, total=False):
+    loan_type: Optional[str]
+    loan_amount: Optional[Decimal]
+    tenure_months: Optional[int]
+    pre_approved_limit: Optional[Decimal]
+
+    # selected / returned loan offer state
+    loan_offer_id: Optional[int]
+
+
+class VerificationAgentState(TypedDict, total=False):
     kyc_verified: bool
+
+
+class UnderwritingAgentState(TypedDict, total=False):
+    interest_rate: Optional[Decimal]
+    monthly_emi: Optional[Decimal]
     credit_check_done: bool
     under_writing_approved: bool
     salary_slip_uploaded: bool
+    salary_slip_path: Optional[str]
+    salary_slip_date: Optional[str]
     salary_amount: Optional[float]
-
-    # Decision
     pre_approved_limit: Optional[Decimal]
     credit_score: Optional[int]
-    application_id: Optional[str]
     final_status: Optional[str]
     rejection_reason: Optional[str]
-    sanction_letter_path: Optional[str]
 
-    # Flow control
-    next_action: Optional[str]
+
+class SanctionAgentState(TypedDict, total=False):
+    application_id: Optional[str]
+    sanction_letter_path: Optional[str]
+    sanction_letter_url: Optional[str]
+
+
+class MasterAgentState(
+    ConversationState,
+    CustomerState,
+):
+    pass
+
+
+class LoanState(
+    ConversationState,
+    CustomerState,
+    SalesAgentState,
+    VerificationAgentState,
+    UnderwritingAgentState,
+    SanctionAgentState,
+):
+    pass

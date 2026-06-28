@@ -21,8 +21,10 @@ credit_score_api_router = APIRouter(
 )
 
 @credit_score_api_router.get("/", response_model=List[CreditScoreResponse], status_code=status.HTTP_200_OK)
-async def get_credit_scores(db: AsyncSession = Depends(get_db)):
-    return await get_all_credit_score_service(db)
+async def get_credit_scores(db: AsyncSession = Depends(get_db),
+                            skip: int = Query(0, ge=0),
+                            limit: int = Query(100, ge=1, le=1000)):
+    return await get_all_credit_score_service(db, skip, limit)
 
 @credit_score_api_router.get("/{credit_score_id}", response_model=CreditScoreResponse, status_code=status.HTTP_200_OK)
 async def get_credit_score_by_id(credit_score_id: int, db: AsyncSession = Depends(get_db)):

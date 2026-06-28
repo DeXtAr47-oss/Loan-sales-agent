@@ -74,7 +74,7 @@ def generate_sanction_letter_pdf(state: LoanState) -> str:
     y_position -= 10
     c.drawString(50, y_position, "The loan amount will be disbursed to your registered bank account within 24-48 hours.")
     
-    c.setFont("Helvetica-Italic", 9)
+    c.setFont("Helvetica", 9)
     c.drawCentredString(width / 2, 50, "This is a computer-generated document and does not require a physical signature.")
     
     c.save()

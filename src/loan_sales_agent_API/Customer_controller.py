@@ -65,10 +65,13 @@ async def get_current_customer(
     db: AsyncSession = Depends(get_db),
     current_user=Depends(get_current_user)
 ):
-    customer, credit_score = current_user
+    credit_score = None
+
+    if current_user.credit_score_rel:
+        credit_score = current_user.credit_score_rel.credit_score
 
     return build_customer_response(
-        customer,
+        current_user,
         credit_score
     )
 
