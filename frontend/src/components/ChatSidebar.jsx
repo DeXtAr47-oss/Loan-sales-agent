@@ -7,6 +7,9 @@ export default function ChatSidebar({ isOpen, onClose, threadId = 'default', pre
   const [input, setInput] = useState(prefill);
   const [file, setFile] = useState(null);
   const [isTyping, setIsTyping] = useState(false);
+  const [activeThreadId, setActiveThreadId] = useState(
+    threadId && threadId !== 'default' ? threadId : null
+  );
 
   const messagesEndRef = useRef(null);
   const fileInputRef = useRef(null);
@@ -40,7 +43,11 @@ export default function ChatSidebar({ isOpen, onClose, threadId = 'default', pre
     setIsTyping(true);
 
     try {
-      const response = await sendMessageToBackend("");
+      const response = await sendMessageToBackend("", {
+        thread_id: activeThreadId
+      });
+      const responseThreadId = response.state?.conversation_id;
+      if (responseThreadId) setActiveThreadId(responseThreadId);
 
       setMessages([
         {
@@ -73,15 +80,19 @@ export default function ChatSidebar({ isOpen, onClose, threadId = 'default', pre
 
     try {
       const response = await sendMessageToBackend(text, {
-        thread_id: threadId,
+        thread_id: activeThreadId,
         file: attachedFile
       });
+      const responseThreadId = response.state?.conversation_id;
+      if (responseThreadId) setActiveThreadId(responseThreadId);
 
       const botMessage = {
         id: Date.now().toString() + '-bot',
         text: response.reply || response.message || response.text ||
           "I'm processing your request. One moment please.",
-        sender: 'bot'
+        sender: 'bot',
+        downloadUrl: response.state?.sanction_letter_url,
+        downloadLabel: response.state?.sanction_letter_url ? 'Download sanction letter' : null
       };
       setMessages(prev => [...prev, botMessage]);
     } catch (error) {
@@ -146,6 +157,17 @@ export default function ChatSidebar({ isOpen, onClose, threadId = 'default', pre
               )}
               <div className="bubble-content">
                 <p>{message.text}</p>
+                {message.downloadUrl && (
+                  <a
+                    href={message.downloadUrl}
+                    className="download-link"
+                    download
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    {message.downloadLabel || 'Download PDF'}
+                  </a>
+                )}
               </div>
               {message.sender === 'user' && (
                 <div className="bubble-avatar user-avatar">

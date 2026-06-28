@@ -1,116 +1,167 @@
-from langchain_core.messages import AIMessage, SystemMessage, HumanMessage
+import re
+
+from langchain_community.tools import tool
+from langchain_core.messages import AIMessage, HumanMessage
 
 from src.agent.states.state import LoanState
-from src.loan_sales_agent_shared.config import LLM
 from src.loan_sales_agent_DL.repository.customer_repository import get_customer_by_email
+from src.loan_sales_agent_shared.connection import AsyncSessionLocal
+
+
+@tool
+async def get_customer_by_email_tool(email_id: str):
+    """Fetch a customer by registered email and return CustomerState fields."""
+    async with AsyncSessionLocal() as db:
+        customer = await get_customer_by_email(db, email_id)
+
+    if not customer:
+        return {
+            "customer_id": None,
+            "customer_verified": False,
+        }
+
+    credit_score = None
+    if getattr(customer, "credit_score", None) is not None:
+        credit_score = customer.credit_score
+    elif (
+        getattr(customer, "credit_score_rel", None)
+        and getattr(customer.credit_score_rel, "credit_score", None)
+    ):
+        credit_score = customer.credit_score_rel.credit_score.credit_score
+
+    return {
+        "customer_id": customer.customer_id,
+        "customer_name": customer.name,
+        "customer_email": customer.email,
+        "credit_score": credit_score,
+        "customer_data": {
+            "name": customer.name,
+            "phone": customer.phone,
+            "address": customer.address,
+            "city": customer.city,
+            "age": customer.age,
+        },
+        "customer_verified": True,
+    }
+
 
 class VerificationAgent:
-    def __init__(self, db):
-        self.llm = LLM
+    def __init__(self, db=None):
         self.db = db
-    
-    def verify_customer(self, state: LoanState) -> LoanState:
-        messages = state.get("messages", [])
- 
-        # ── Step 1: Check if we already asked for email ──────────────────────
-        # Look back through messages to see if the agent has already asked for email
-        already_asked = any(
-            isinstance(msg, AIMessage) and "email" in msg.content.lower()
-            for msg in messages
-        )
- 
-        # ── Step 2: Haven't asked yet — ask for email and wait ───────────────
-        if not already_asked:
-            system_msg = """You are a verification agent. Ask the customer to provide 
-            their email address to verify their identity."""
-            response = self.llm.invoke([SystemMessage(content=system_msg)])
-            state["messages"].append(response)
-            state["customer_verified"] = False
-            return state
- 
-        # ── Step 3: Already asked — extract email from latest human message ──
-        # Find the last HumanMessage after our email-ask
-        last_human_msg = next(
-            (msg for msg in reversed(messages) if isinstance(msg, HumanMessage)),
-            None
-        )
- 
-        if not last_human_msg:
-            # Asked but no human reply yet — do nothing and wait
-            return state
- 
-        # ── Step 4: Use LLM to extract email from the user's reply ───────────
-        extraction_prompt = f"""Extract the email address from the following message.
-        Return ONLY the email address with no extra text. If no valid email is found, return 'NOT_FOUND'.
- 
-        Message: {last_human_msg.content}"""
- 
-        extraction_response = self.llm.invoke([SystemMessage(content=extraction_prompt)])
-        extracted_email = extraction_response.content.strip()
- 
-        # ── Step 5: No valid email in reply — ask again ──────────────────────
-        if extracted_email == "NOT_FOUND" or "@" not in extracted_email:
-            retry_msg = """I couldn't find a valid email address in your message. 
-            Could you please provide your registered email address?"""
-            state["messages"].append(AIMessage(content=retry_msg))
-            state["customer_verified"] = False
-            return state
- 
-        # ── Step 6: Query the database ───────────────────────────────────────
-        customer = get_customer_by_email(self.db, extracted_email)
- 
-        # ── Step 7a: Customer found ───────────────────────────────────────────
-        if customer:
-            state["customer_verified"] = True
-            state["customer_id"] = customer.id
-            state["customer_name"] = customer.name
-            state["customer_data"] = {
-                "email": customer.email,
-                "phone": customer.phone,
-                "address": customer.address,
-                "city": customer.city,
-                "age": customer.age,
-                "current_loan_amount": customer.current_loan_amount,
-                "pre_approved_limit": customer.pre_approved_limit,
-            }
-            state["next_action"] = "kyc"
- 
-            confirmation_msg = f"""Email Verified Successfully
- 
-Welcome back, {customer.name}! Your identity has been confirmed.
-We will now proceed with your KYC verification."""
-            state["messages"].append(AIMessage(content=confirmation_msg))
- 
-        # ── Step 7b: Customer not found ──────────────────────────────────────
-        else:
-            state["customer_verified"] = False
-            state["next_action"] = "verification_failed"
- 
-            not_found_msg = f"""I was unable to find an account associated with 
-            '{extracted_email}'. Please check your email and try again, or contact 
-            support if you believe this is an error."""
-            state["messages"].append(AIMessage(content=not_found_msg))
- 
-        return state
-    
-    def verify_kyc(self, state: LoanState) -> LoanState:
-        customer_data = state.get("customer_data", {})
-        
-        if customer_data:
-            state["kyc_verified"] = True
-            verification_msg = f"""✓ KYC Verification Complete
-            
-Name: {customer_data['name']}
-Phone: {customer_data['phone']}
-Address: {customer_data['address']}
-City: {customer_data['city']}
 
-All details verified successfully from our CRM system."""
-            
-            state["messages"].append(AIMessage(content=verification_msg))
-            state["next_action"] = "underwriting"
-        else:
-            state["kyc_verified"] = False
-            state["next_action"] = "kyc_failed"
-        
-        return state
+    def _extract_email(self, text: str) -> str | None:
+        match = re.search(
+            r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}",
+            text,
+        )
+        return match.group(0) if match else None
+
+    async def verify_customer(self, state: LoanState) -> dict:
+        """Verify customer identity and populate CustomerState fields."""
+        if state.get("customer_id"):
+            if not state.get("credit_score") and state.get("customer_email"):
+                customer_updates = await get_customer_by_email_tool.ainvoke({
+                    "email_id": state["customer_email"],
+                })
+                return {
+                    **customer_updates,
+                    "customer_verified": True,
+                    "next_agent": "underwriting",
+                }
+
+            return {
+                "customer_verified": True,
+                "next_agent": "underwriting",
+            }
+
+        last_human_message = next(
+            (
+                message
+                for message in reversed(state.get("messages", []))
+                if isinstance(message, HumanMessage)
+                or getattr(message, "type", None) == "human"
+            ),
+            None,
+        )
+
+        email_id = None
+        if last_human_message:
+            email_id = self._extract_email(last_human_message.content)
+
+        if not email_id:
+            return {
+                "customer_verified": False,
+                "next_agent": "verification",
+                "messages": [
+                    AIMessage(
+                        content=(
+                            "Please provide your registered email address so "
+                            "I can verify your customer profile."
+                        )
+                    )
+                ],
+            }
+
+        customer_updates = await get_customer_by_email_tool.ainvoke({
+            "email_id": email_id,
+        })
+
+        if not customer_updates.get("customer_id"):
+            return {
+                "customer_email": email_id,
+                "customer_verified": False,
+                "next_agent": "verification",
+                "messages": [
+                    AIMessage(
+                        content=(
+                            "I couldn't find a customer profile for that email. "
+                            "Please check the email address and try again."
+                        )
+                    )
+                ],
+            }
+
+        return {
+            **customer_updates,
+            "next_agent": "underwriting",
+            "messages": [
+                AIMessage(
+                    content=(
+                        f"Thanks, {customer_updates.get('customer_name')}. "
+                        "Your customer profile has been verified."
+                    )
+                )
+            ],
+        }
+
+    async def verify_kyc(self, state: LoanState) -> dict:
+        customer_data = state.get("customer_data") or {}
+
+        if not customer_data:
+            return {
+                "kyc_verified": False,
+                "messages": [
+                    AIMessage(
+                        content=(
+                            "I couldn't verify your KYC details yet because "
+                            "your customer profile is missing."
+                        )
+                    )
+                ],
+            }
+
+        return {
+            "kyc_verified": True,
+            "next_agent": "underwriting",
+            "messages": [
+                AIMessage(
+                    content=(
+                        "KYC verification complete.\n\n"
+                        f"Name: {customer_data.get('name')}\n"
+                        f"Phone: {customer_data.get('phone')}\n"
+                        f"Address: {customer_data.get('address')}\n"
+                        f"City: {customer_data.get('city')}"
+                    )
+                )
+            ],
+        }

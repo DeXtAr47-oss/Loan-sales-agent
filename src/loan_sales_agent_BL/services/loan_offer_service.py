@@ -28,20 +28,20 @@ async def get_all_loan_offers_service(db: AsyncSession, skip: int = 0, limit: in
 async def get_loan_offer_by_id_service(db: AsyncSession, loan_id: int):
     loan_offer = await get_loan_offer(db, loan_id)
     if not loan_offer:
-        raise HTTPException(status_code=404, detail='Loan Offer not found')
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='Loan Offer not found')
     return loan_offer
 
 async def create_loan_offer_service(db: AsyncSession, loan_offer_request: LoanOfferRequest):
     try:
         loan_offer = await create_loan_offer(db, loan_offer_request)
     except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
     return loan_offer
 
 async def update_loan_offer_service(db: AsyncSession, loan_offer_id: int, loan_offer_request: LoanOfferRequest):
     loan_offer = await get_loan_offer(db, loan_offer_id)
     if not loan_offer:
-        raise HTTPException(status_code=404, detail='Loan Offer not found')
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='Loan Offer not found')
 
     try:
         updated_loan_offer = await update_loan_offer(db, loan_offer_id, loan_offer_request)

@@ -5,6 +5,7 @@ import { sendMessageToBackend } from '../services/api';
 const ChatContext = createContext();
 
 const initialState = {
+  threadId: null,
   messages: [
     {
       id: uuidv4(),
@@ -30,6 +31,8 @@ function chatReducer(state, action) {
       return { ...state, messages: [...state.messages, action.payload] };
     case 'SET_TYPING':
       return { ...state, isTyping: action.payload };
+    case 'SET_THREAD_ID':
+      return { ...state, threadId: action.payload };
     case 'UPDATE_MESSAGE_STATUS':
       return {
         ...state,
@@ -75,7 +78,13 @@ export function ChatProvider({ children }) {
     dispatch({ type: 'SET_TYPING', payload: true });
 
     try {
-      const response = await sendMessageToBackend(text);
+      const response = await sendMessageToBackend(text, {
+        thread_id: state.threadId
+      });
+      const responseThreadId = response.state?.conversation_id;
+      if (responseThreadId) {
+        dispatch({ type: 'SET_THREAD_ID', payload: responseThreadId });
+      }
       const botMessage = {
         id: uuidv4(),
         text: response.message || response.text || "I'm processing your loan request. A representative will contact you shortly.",
@@ -96,10 +105,11 @@ export function ChatProvider({ children }) {
     } finally {
       dispatch({ type: 'SET_TYPING', payload: false });
     }
-  }, []);
+  }, [state.threadId]);
 
   const clearChat = useCallback(() => {
     dispatch({ type: 'CLEAR_MESSAGES' });
+    dispatch({ type: 'SET_THREAD_ID', payload: null });
   }, []);
 
   const switchConversation = useCallback((id) => {
