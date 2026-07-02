@@ -1,7 +1,7 @@
 from sqlalchemy import Column, Integer,UUID, DateTime, ForeignKey, Boolean
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
-from src.loan_sales_agent_shared.connection import base
+from src.loan_sales_agent_DL.services.connection import base
 
 
 class CreditScore(base):

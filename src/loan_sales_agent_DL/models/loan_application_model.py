@@ -1,7 +1,7 @@
 from sqlalchemy import Column, Integer, String, Numeric, DateTime, ForeignKey, UUID, Boolean
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
-from src.loan_sales_agent_shared.connection import base
+from src.loan_sales_agent_DL.services.connection import base
 
 class LoanApplication(base):
     __tablename__="loan_application"

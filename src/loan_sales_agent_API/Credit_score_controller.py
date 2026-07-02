@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import List
 
-from src.loan_sales_agent_shared.connection import get_db
+from src.loan_sales_agent_DL.services.connection import get_db
 from src.loan_sales_agent_BL.schemas.credit_score_schema import (
 CreditScoreCreate,
 CreditScoreResponse

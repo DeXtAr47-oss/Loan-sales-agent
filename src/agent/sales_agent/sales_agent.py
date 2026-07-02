@@ -10,7 +10,7 @@ from pydantic import BaseModel, Field
 from src.loan_sales_agent_shared.config import LLM
 from src.agent.states.state import LoanState
 from src.loan_sales_agent_DL.repository.loan_offer_repository import get_loan_offers
-from src.loan_sales_agent_shared.connection import AsyncSessionLocal
+from src.loan_sales_agent_DL.services.connection import AsyncSessionLocal
 
 
 class LoanRequirements(BaseModel):

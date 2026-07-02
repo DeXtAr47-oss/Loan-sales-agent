@@ -22,7 +22,7 @@ from src.loan_sales_agent_shared.config import (
     INDEX,
     MIN_CREDIT_SCORE,
 )
-from src.loan_sales_agent_shared.connection import AsyncSessionLocal
+from src.loan_sales_agent_DL.services.connection import AsyncSessionLocal
 
 
 def _extract_text_from_file(file_path: str) -> str:

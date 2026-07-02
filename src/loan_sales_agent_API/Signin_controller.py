@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.loan_sales_agent_shared.connection import get_db
+from src.loan_sales_agent_DL.services.connection import get_db
 from src.loan_sales_agent_BL.schemas.signin_schemma import SigninRequest, SigninResponse
 from src.loan_sales_agent_BL.services.signin_service import authentication_services
 

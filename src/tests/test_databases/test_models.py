@@ -3,13 +3,13 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.exc import IntegrityError
 
-from src.databases import Customer, CreditScore, LoanApplication, SalarySlip
-from src.loan_sales_agent_shared.connection import base
-from src.loan_sales_agent_shared.config import TEST_DATABASE_URL
+from src.loan_sales_agent_DL.models import Customer, CreditScore, LoanApplication, SalarySlip
+from services.connection import base
+from src.loan_sales_agent_shared.config import DATABASE_URL
 
 @pytest.fixture(scope="session")
 def engine():
-    return create_engine(TEST_DATABASE_URL)
+    return create_engine(DATABASE_URL)
 
 @pytest.fixture(scope="function")
 def session(engine):

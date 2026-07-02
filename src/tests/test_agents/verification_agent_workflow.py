@@ -1,5 +1,5 @@
 from langchain_core.messages import HumanMessage
-from src.loan_sales_agent_shared.connection import SessionLocal
+from services.connection import SessionLocal
 
 from src.agent.verification_agent.verification_agent import VerificationAgent
 from src.agent.states.state import LoanState

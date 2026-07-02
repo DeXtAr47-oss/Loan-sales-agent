@@ -5,7 +5,7 @@ from langchain_core.messages import AIMessage, HumanMessage
 
 from src.agent.states.state import LoanState
 from src.loan_sales_agent_DL.repository.customer_repository import get_customer_by_email
-from src.loan_sales_agent_shared.connection import AsyncSessionLocal
+from src.loan_sales_agent_DL.services.connection import AsyncSessionLocal
 
 
 @tool

@@ -1,10 +1,8 @@
 from fastapi import APIRouter, Depends, Request, UploadFile
 from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
-from sqlalchemy.ext.asyncio import AsyncSession
 from contextlib import asynccontextmanager
 
 from src.loan_sales_agent_shared.config import CHECKPOINTER_DATABASE_URL
-from src.loan_sales_agent_shared.connection import get_db
 from src.loan_sales_agent_BL.services.chat_service import chat_service
 from src.loan_sales_agent_BL.schemas.chat_schema import ChatResponse, ChatRequest
 from src.loan_sales_agent_BL.services.authentication_service import get_current_user_api

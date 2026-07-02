@@ -10,7 +10,7 @@ create_loan_offer_service,
 update_loan_offer_service,
 delete_loan_offer_service
 )
-from src.loan_sales_agent_shared.connection import get_db
+from src.loan_sales_agent_DL.services.connection import get_db
 loan_offer_router_api = APIRouter(
     prefix="/api/loan_offer",
     tags=["Loan offer API"],
