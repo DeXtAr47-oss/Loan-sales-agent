@@ -7,7 +7,7 @@ from pydantic import EmailStr
 from src.loan_sales_agent_shared.auth import verify_token
 from src.loan_sales_agent_shared.config import pwd_context
 from src.loan_sales_agent_BL.services.customer_service import get_customer_by_email
-from services.connection import get_db
+from src.loan_sales_agent_DL.services.connection import get_db
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/signin")
 
