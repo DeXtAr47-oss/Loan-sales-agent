@@ -9,6 +9,7 @@ class PermissionEnums(str, Enum):
     VIEW = "VIEW"
     EDIT = "EDIT"
     CREATE = "CREATE"
+
 class Permission(base):
     __tablename__ = "permission"
     permission_id = Column(Integer, primary_key=True)
