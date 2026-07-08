@@ -5,8 +5,9 @@ from sqlalchemy import pool
 
 from alembic import context
 
-from services.connection import base
+from src.loan_sales_agent_DL.services.connection import base
 from src.loan_sales_agent_shared.config import DATABASE_URL
+from src.loan_sales_agent_DL.models import *
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
