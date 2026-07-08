@@ -25,3 +25,4 @@ class Customer(base):
     loan_offers_rel = relationship("RelLoanOfferCustomer", back_populates="customer", cascade="all, delete-orphan")
     loan_application_rel = relationship("RelLoanApplicationCustomer", back_populates="customer", cascade="all, delete-orphan")
     salary_slips_rel = relationship("RelSalarySlipCustomer", back_populates="customer", cascade="all, delete-orphan")
+    permission_rel = relationship("RelPermissionCustomer", back_populates="customer", cascade="all, delete-orphan")
