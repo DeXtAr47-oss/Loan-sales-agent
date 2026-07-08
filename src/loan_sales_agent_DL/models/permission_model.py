@@ -12,10 +12,11 @@ class Permission(base):
     permission_key = Column(Enum(PermissionEnums, name="permission_enum"), nullable = False, default=PermissionEnums.VIEW, index=True)
     permission_name = Column(String(100))
     created_at = Column(DateTime(timezone=True), server_default=func.now())
-    updated_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
     is_deleted = Column(Boolean, default=False)
 
     rel_customer_permission = relationship("RelPermissionCustomer", back_populates="permission", cascade="all, delete-orphan")
+    rel_staff_permission = relationship("RelPermissionStaff", back_populates="permission", cascade="all, delete-orphan")
 
 class RelPermissionCustomer(base):
     __tablename__ = "rel_permission_customer"
@@ -26,3 +27,14 @@ class RelPermissionCustomer(base):
 
     customer = relationship("Customer", back_populates="permission_rel")
     permission = relationship("Permission", back_populates="rel_customer_permission")
+
+
+class RelPermissionStaff(base):
+    __tablename__ = "rel_permission_staff"
+    rel_staff_role_id = Column(Integer, primary_key=True)
+    permission_id = Column(Integer, ForeignKey("permission.permission_id", ondelete="CASCADE"))
+    staff_id = Column(UUID(as_uuid=True), ForeignKey("staff.staff_id", ondelete="CASCADE"))
+    is_deleted = Column(Boolean, default=False)
+
+    staff = relationship("Staff", back_populates="permission_rel")
+    permission = relationship("Permission", back_populates="rel_staff_permission")
