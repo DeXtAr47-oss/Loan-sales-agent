@@ -7,6 +7,8 @@ from sqlalchemy.orm import joinedload
 from src.loan_sales_agent_BL.schemas.customer_schema import CustomerCreate, CustomerBase
 from src.loan_sales_agent_DL.models import customer_model as models
 from src.loan_sales_agent_DL.models.credit_score_model import RelCreditScoreCustomer, CreditScore
+from src.loan_sales_agent_DL.models.loan_application_model import LoanApplication, RelLoanApplicationCustomer
+from src.loan_sales_agent_DL.models.loan_offer_model import LoanOffer, RelLoanOfferCustomer
 from src.loan_sales_agent_DL.repository.credit_score_repository import set_credit_score, update_credit_score
 from src.loan_sales_agent_BL.schemas.credit_score_schema import CreditScoreCreate
 from src.loan_sales_agent_shared.config import pwd_context
@@ -14,7 +16,7 @@ import uuid
 
 async def get_all_customer(db: AsyncSession, skip: int = 0, limit: int = 100):
     stmt = (
-        select(models.Customer, CreditScore)
+        select(models.Customer, CreditScore, LoanApplication, LoanOffer)
         .outerjoin(
             RelCreditScoreCustomer,
             models.Customer.customer_id == RelCreditScoreCustomer.customer_id
@@ -22,6 +24,22 @@ async def get_all_customer(db: AsyncSession, skip: int = 0, limit: int = 100):
         .outerjoin(
             CreditScore,
             RelCreditScoreCustomer.credit_score_id == CreditScore.credit_score_id
+        )
+        .outerjoin(
+            RelLoanApplicationCustomer,
+            models.Customer.customer_id == RelLoanApplicationCustomer.customer_id
+        )
+        .outerjoin(
+            LoanApplication,
+            LoanApplication.application_id == RelLoanApplicationCustomer.application_id
+        )
+        .outerjoin(
+            RelLoanOfferCustomer,
+            models.Customer.customer_id == RelLoanOfferCustomer.customer_id
+        )
+        .outerjoin(
+            LoanOffer,
+            LoanOffer.offer_id == RelLoanOfferCustomer.offer_id
         )
         .where(
             models.Customer.is_deleted.is_(False)
@@ -32,13 +50,31 @@ async def get_all_customer(db: AsyncSession, skip: int = 0, limit: int = 100):
     result = await db.execute(stmt)
 
     customers_map = {}
-    for customer, credit_score in result.all():
-        customers_map.setdefault(
-            customer.customer_id,
-            (customer, credit_score)
-        )
+    for customer, credit_score, loan_offer, loan_application in result.all():
 
-    return list(customers_map.values())
+        if customer.customer_id not in customers_map:
+            customers_map[customer.customer_id] = {
+                "customer": customer,
+                "credit_score": credit_score,
+                "loan_offers": [],
+                "loan_applications": []
+            }
+
+        if loan_offer:
+            customers_map[customer.customer_id]["loan_offers"].append(loan_offer)
+
+        if loan_application:
+            customers_map[customer.customer_id]["loan_applications"].append(loan_application)
+
+    return [
+        (
+            value["customer"],
+            value["credit_score"],
+            value["loan_offers"],
+            value["loan_applications"]
+        )
+        for value in customers_map.values()
+    ]
 
 async def get_customer_by_id(
     db: AsyncSession,
@@ -54,6 +90,7 @@ async def get_customer_by_id(
             CreditScore,
             RelCreditScoreCustomer.credit_score_id == CreditScore.credit_score_id
         )
+        .outerjoin()
         .where(
             models.Customer.customer_id == cust_id,
             models.Customer.is_deleted.is_(False)

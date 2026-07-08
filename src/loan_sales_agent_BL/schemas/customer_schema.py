@@ -1,5 +1,5 @@
 from pydantic import BaseModel, EmailStr
-from typing import Optional
+from typing import Optional, List
 from decimal import Decimal
 from datetime import datetime
 import uuid
@@ -33,6 +33,6 @@ class CustomerResponse(CustomerBase):
     created_at: datetime
     updated_at: datetime
     credit_score: Optional[CreditScoreResponse] = None
-    loan_offers: Optional[LoanOfferResponse] = None
-    loan_applications: Optional[LoanApplicationResponse] = None
+    loan_offers: List[Optional[LoanOfferResponse]] = None
+    loan_applications: List[Optional[LoanApplicationResponse]] = None
     salary_slips: Optional[SalarySlipResponse] = None

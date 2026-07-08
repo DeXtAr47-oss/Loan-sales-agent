@@ -5,6 +5,8 @@ import uuid
 
 from src.loan_sales_agent_BL.schemas.customer_schema import CustomerCreate, CustomerResponse
 from src.loan_sales_agent_BL.schemas.credit_score_schema import CreditScoreResponse
+from src.loan_sales_agent_BL.schemas.loan_application_schema import LoanApplicationResponse
+from src.loan_sales_agent_BL.schemas.loan_offer_schema import LoanOfferResponse
 from src.loan_sales_agent_DL.repository.customer_repository import (
     get_all_customer,
     get_customer_by_id,
@@ -20,8 +22,8 @@ async def get_all_customer_service(db: AsyncSession, skip: int = 0, limit: int =
     customer_tuples = await get_all_customer(db, skip, limit)
 
     return [
-        build_customer_response(customer, credit_score)
-        for customer, credit_score in customer_tuples
+        build_customer_response(customer, credit_score, loan_application, loan_offer)
+        for customer, credit_score, loan_application, loan_offer in customer_tuples
     ]
 
 async def get_by_id_customer_service(db: AsyncSession, cust_id: uuid.UUID):
@@ -102,7 +104,7 @@ async def delete_customer_service(db: AsyncSession, id: uuid.UUID):
             detail = str(e)
         )
 
-def build_customer_response(customer, credit_score_raw) -> CustomerResponse:
+def build_customer_response(customer, credit_score_raw, loan_application_raw, loan_offer_raw) -> CustomerResponse:
     credit_score_response = None
     if credit_score_raw:
         if isinstance(credit_score_raw, dict):
@@ -117,6 +119,15 @@ def build_customer_response(customer, credit_score_raw) -> CustomerResponse:
                 credit_score_id=credit_score_raw.credit_score_id,   
                 last_updated=getattr(credit_score_raw, 'last_updated', None)
             )
+    loan_application_response = [
+        LoanApplicationResponse.model_validate(application)
+        for application in loan_application_raw
+    ]
+
+    loan_offer_response = [
+        LoanOfferResponse.model_validate(offer)
+        for offer in loan_offer_raw
+    ]
 
     return CustomerResponse(
         customer_id=customer.customer_id,
@@ -131,7 +142,7 @@ def build_customer_response(customer, credit_score_raw) -> CustomerResponse:
         created_at=customer.created_at,
         updated_at=customer.updated_at,
         credit_score=credit_score_response,
-        loan_offers=None,
-        loan_applications=None,
+        loan_offers=loan_offer_response,
+        loan_applications=loan_application_response,
         salary_slips=None
     )

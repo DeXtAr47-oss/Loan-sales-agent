@@ -17,7 +17,7 @@ class LoanApplicationCreate(LoanApplicationBase):
 
 class LoanApplicationResponse(LoanApplicationBase):
     application_id: int
-    conversation_id: int
+    conversation_id: str
     created_at: datetime
     approved_at: datetime
 
