@@ -2,7 +2,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from pydantic import EmailStr
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func
-from sqlalchemy.orm import joinedload
+from sqlalchemy.orm import selectinload, joinedload
 
 from src.loan_sales_agent_BL.schemas.customer_schema import CustomerCreate, CustomerBase
 from src.loan_sales_agent_DL.models import customer_model as models
@@ -23,82 +23,26 @@ async def get_all_customer(db: AsyncSession, skip: int = 0, limit: int = 100):
 
     total = await db.scalar(count_stmt)
 
-    customer_stmt = (
-        select(models.Customer.customer_id)
+    stmt = (
+        select(models.Customer)
+        .options(
+            selectinload(models.Customer.credit_score_rel)
+            .selectinload(RelCreditScoreCustomer.credit_score),
+
+            selectinload(models.Customer.loan_offers_rel)
+            .selectinload(RelLoanOfferCustomer.loan_offers),
+
+            selectinload(models.Customer.loan_application_rel)
+            .selectinload(RelLoanApplicationCustomer.loan_application),
+        )
         .where(models.Customer.is_deleted.is_(False))
         .offset(skip)
         .limit(limit)
     )
-    customer_ids = (await db.execute(customer_stmt)).scalars().all()
-    if not customer_ids:
-        return [], total
 
-    stmt = (
-        select(models.Customer, CreditScore, LoanApplication, LoanOffer)
-        .outerjoin(
-            RelCreditScoreCustomer,
-            models.Customer.customer_id == RelCreditScoreCustomer.customer_id
-        )
-        .outerjoin(
-            CreditScore,
-            RelCreditScoreCustomer.credit_score_id == CreditScore.credit_score_id
-        )
-        .outerjoin(
-            RelLoanApplicationCustomer,
-            models.Customer.customer_id == RelLoanApplicationCustomer.customer_id
-        )
-        .outerjoin(
-            LoanApplication,
-            LoanApplication.application_id == RelLoanApplicationCustomer.application_id
-        )
-        .outerjoin(
-            RelLoanOfferCustomer,
-            models.Customer.customer_id == RelLoanOfferCustomer.customer_id
-        )
-        .outerjoin(
-            LoanOffer,
-            LoanOffer.offer_id == RelLoanOfferCustomer.offer_id
-        )
-        .where(
-            models.Customer.is_deleted.is_(False)
-        )
-    )
     result = await db.execute(stmt)
 
-    customers_map = {}
-    for customer, credit_score, loan_application, loan_offer in result.all():
-
-        if customer.customer_id not in customers_map:
-            customers_map[customer.customer_id] = {
-                "customer": customer,
-                "credit_score": credit_score,
-                "loan_offers": [],
-                "loan_applications": []
-            }
-
-        if (
-                loan_offer
-                and loan_offer not in customers_map[customer.customer_id]["loan_offers"]
-        ):
-            customers_map[customer.customer_id]["loan_offers"].append(loan_offer)
-
-        if (
-                loan_application
-                and loan_application not in customers_map[customer.customer_id]["loan_applications"]
-        ):
-            customers_map[customer.customer_id]["loan_applications"].append(
-                loan_application
-            )
-
-    customers =  [
-            (
-                value["customer"],
-                value["credit_score"],
-                value["loan_offers"],
-                value["loan_applications"]
-            )
-            for value in customers_map.values()
-    ]
+    customers = result.scalars().all()
 
     return customers, total
 

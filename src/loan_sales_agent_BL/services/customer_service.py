@@ -21,16 +21,11 @@ from src.loan_sales_agent_DL.repository.customer_repository import (
 
 async def get_all_customer_service(db: AsyncSession, page: int = 1, per_page: int = 10):
     skip = (page - 1) * per_page
-    customer_tuples, total = await get_all_customer(db, skip, per_page)
+    customers, total = await get_all_customer(db, skip, per_page)
 
     records = [
-        build_customer_response(
-            customer,
-            credit_score,
-            loan_offers,
-            loan_applications,
-        )
-        for customer, credit_score, loan_offers, loan_applications in customer_tuples
+        build_customer_response(customer)
+        for customer in customers
     ]
 
     return paginated_response(
@@ -118,45 +113,41 @@ async def delete_customer_service(db: AsyncSession, id: uuid.UUID):
             detail = str(e)
         )
 
-def build_customer_response(customer, credit_score_raw, loan_application_raw, loan_offer_raw) -> CustomerResponse:
-    credit_score_response = None
-    if credit_score_raw:
-        if isinstance(credit_score_raw, dict):
-            credit_score_response = CreditScoreResponse(
-                credit_score=credit_score_raw['credit_score'],
-                credit_score_id=credit_score_raw['credit_score_id'],
-                last_updated=credit_score_raw.get('last_updated')
-            )
-        else:
-            credit_score_response = CreditScoreResponse(
-                credit_score=credit_score_raw.credit_score,
-                credit_score_id=credit_score_raw.credit_score_id,   
-                last_updated=getattr(credit_score_raw, 'last_updated', None)
-            )
-    loan_application_response = [
-        LoanApplicationResponse.model_validate(application)
-        for application in loan_application_raw
+def build_customer_response(customer)->CustomerResponse:
+
+    credit_score = None
+
+    if customer.credit_score_rel:
+        credit_score = CreditScoreResponse.model_validate(
+            customer.credit_score_rel.credit_score
+        )
+
+    loan_offers = [
+        LoanOfferResponse.model_validate(rel.loan_offer)
+        for rel in customer.loan_offers_rel
+        if rel.loan_offer
     ]
 
-    loan_offer_response = [
-        LoanOfferResponse.model_validate(offer)
-        for offer in loan_offer_raw
+    loan_applications = [
+        LoanApplicationResponse.model_validate(rel.loan_application)
+        for rel in customer.loan_application_rel
+        if rel.loan_application
     ]
 
     return CustomerResponse(
         customer_id=customer.customer_id,
         name=customer.name,
         age=customer.age,
+        city=customer.city,
         phone=customer.phone,
         email=customer.email,
-        city=customer.city,
         address=customer.address,
         current_loan_amount=customer.current_loan_amount,
         pre_approved_limit=customer.pre_approved_limit,
         created_at=customer.created_at,
         updated_at=customer.updated_at,
-        credit_score=credit_score_response,
-        loan_offers=loan_offer_response,
-        loan_applications=loan_application_response,
-        salary_slips=None
+        credit_score=credit_score,
+        loan_offers=loan_offers,
+        loan_applications=loan_applications,
+        salary_slips=None,
     )
