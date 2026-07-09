@@ -7,6 +7,7 @@ from src.loan_sales_agent_BL.schemas.customer_schema import CustomerCreate, Cust
 from src.loan_sales_agent_BL.schemas.credit_score_schema import CreditScoreResponse
 from src.loan_sales_agent_BL.schemas.loan_application_schema import LoanApplicationResponse
 from src.loan_sales_agent_BL.schemas.loan_offer_schema import LoanOfferResponse
+from src.loan_sales_agent_BL.services.base_service import paginated_response
 from src.loan_sales_agent_DL.repository.customer_repository import (
     get_all_customer,
     get_customer_by_id,
@@ -18,13 +19,26 @@ from src.loan_sales_agent_DL.repository.customer_repository import (
     check_phone_number
 )
 
-async def get_all_customer_service(db: AsyncSession, skip: int = 0, limit: int = 100):
-    customer_tuples = await get_all_customer(db, skip, limit)
+async def get_all_customer_service(db: AsyncSession, page: int = 1, per_page: int = 10):
+    skip = (page - 1) * per_page
+    customer_tuples, total = await get_all_customer(db, skip, per_page)
 
-    return [
-        build_customer_response(customer, credit_score, loan_application, loan_offer)
-        for customer, credit_score, loan_application, loan_offer in customer_tuples
+    records = [
+        build_customer_response(
+            customer,
+            credit_score,
+            loan_offers,
+            loan_applications,
+        )
+        for customer, credit_score, loan_offers, loan_applications in customer_tuples
     ]
+
+    return paginated_response(
+        records=records,
+        total=total,
+        page=page,
+        per_page=per_page,
+    )
 
 async def get_by_id_customer_service(db: AsyncSession, cust_id: uuid.UUID):
     result = await get_customer_by_id(db, cust_id)

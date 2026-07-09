@@ -52,6 +52,9 @@ async def authenticate_user(db: AsyncSession, email: EmailStr, password: str):
     result = await get_customer_by_email(db, email)
 
     if not result:
+        # result = await get_staff_by_email(db, email)
+        # if not result:
+        #    return None
         return None
 
     user= result

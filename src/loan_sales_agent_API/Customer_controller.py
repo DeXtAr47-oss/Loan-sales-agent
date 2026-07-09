@@ -19,6 +19,8 @@ delete_customer_service,
 build_customer_response
 )
 
+from src.loan_sales_agent_shared.models.pagination_model import PaginatedResponse
+
 from src.loan_sales_agent_BL.services.authentication_service import get_current_user
 
 router = APIRouter(
@@ -48,13 +50,13 @@ async def create_customer_controller(
     new_customer = await create_customer_service(db, customer)
     return new_customer
 
-@api_router.get("/", response_model=List[CustomerResponse], status_code=status.HTTP_200_OK)
+@api_router.get("/", response_model=PaginatedResponse[CustomerResponse], status_code=status.HTTP_200_OK)
 async def get_all_customers(
-    skip: int = Query(0, ge=0),
-    limit: int = Query(100, ge=1, le=1000),
-    db: AsyncSession = Depends(get_db)
+    page: int = Query(1, ge=1),
+    per_page: int = Query(10, ge=1, le=100),
+    db: AsyncSession = Depends(get_db),
 ):
-    return await get_all_customer_service(db, skip, limit)
+    return await get_all_customer_service(db, page, per_page)
 
 @router.get(
     "/me",

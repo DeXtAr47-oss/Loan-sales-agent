@@ -22,6 +22,7 @@ async def authentication_services(db: AsyncSession, login_data: SigninRequest):
         token_type="Bearer",
         user=UserInfo(
             customer_id=user.customer_id,
+            staff_id=user.staff_id,
             name=user.name,
             email=user.email
         )

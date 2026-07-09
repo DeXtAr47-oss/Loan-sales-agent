@@ -1,7 +1,7 @@
 from sqlalchemy.exc import SQLAlchemyError
 from pydantic import EmailStr
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
+from sqlalchemy import select, func
 from sqlalchemy.orm import joinedload
 
 from src.loan_sales_agent_BL.schemas.customer_schema import CustomerCreate, CustomerBase
@@ -15,6 +15,24 @@ from src.loan_sales_agent_shared.config import pwd_context
 import uuid
 
 async def get_all_customer(db: AsyncSession, skip: int = 0, limit: int = 100):
+    count_stmt = (
+        select(func.count())
+        .select_from(models.Customer)
+        .where(models.Customer.is_deleted.is_(False))
+    )
+
+    total = await db.scalar(count_stmt)
+
+    customer_stmt = (
+        select(models.Customer.customer_id)
+        .where(models.Customer.is_deleted.is_(False))
+        .offset(skip)
+        .limit(limit)
+    )
+    customer_ids = (await db.execute(customer_stmt)).scalars().all()
+    if not customer_ids:
+        return [], total
+
     stmt = (
         select(models.Customer, CreditScore, LoanApplication, LoanOffer)
         .outerjoin(
@@ -44,13 +62,11 @@ async def get_all_customer(db: AsyncSession, skip: int = 0, limit: int = 100):
         .where(
             models.Customer.is_deleted.is_(False)
         )
-        .offset(skip)
-        .limit(limit)
     )
     result = await db.execute(stmt)
 
     customers_map = {}
-    for customer, credit_score, loan_offer, loan_application in result.all():
+    for customer, credit_score, loan_application, loan_offer in result.all():
 
         if customer.customer_id not in customers_map:
             customers_map[customer.customer_id] = {
@@ -60,21 +76,31 @@ async def get_all_customer(db: AsyncSession, skip: int = 0, limit: int = 100):
                 "loan_applications": []
             }
 
-        if loan_offer:
+        if (
+                loan_offer
+                and loan_offer not in customers_map[customer.customer_id]["loan_offers"]
+        ):
             customers_map[customer.customer_id]["loan_offers"].append(loan_offer)
 
-        if loan_application:
-            customers_map[customer.customer_id]["loan_applications"].append(loan_application)
+        if (
+                loan_application
+                and loan_application not in customers_map[customer.customer_id]["loan_applications"]
+        ):
+            customers_map[customer.customer_id]["loan_applications"].append(
+                loan_application
+            )
 
-    return [
-        (
-            value["customer"],
-            value["credit_score"],
-            value["loan_offers"],
-            value["loan_applications"]
-        )
-        for value in customers_map.values()
+    customers =  [
+            (
+                value["customer"],
+                value["credit_score"],
+                value["loan_offers"],
+                value["loan_applications"]
+            )
+            for value in customers_map.values()
     ]
+
+    return customers, total
 
 async def get_customer_by_id(
     db: AsyncSession,

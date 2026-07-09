@@ -7,6 +7,7 @@ class SigninRequest(BaseModel):
 
 class UserInfo(BaseModel):
     customer_id: uuid.UUID
+    staff_id: uuid.UUID
     name: str
     email: EmailStr
 
