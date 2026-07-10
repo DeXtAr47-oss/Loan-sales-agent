@@ -1,27 +1,20 @@
 from sqlalchemy.exc import SQLAlchemyError
 from pydantic import EmailStr
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, func
+from sqlalchemy import select, func, or_
 from sqlalchemy.orm import selectinload, joinedload
 
 from src.loan_sales_agent_BL.schemas.customer_schema import CustomerCreate, CustomerBase
 from src.loan_sales_agent_DL.models import customer_model as models
 from src.loan_sales_agent_DL.models.credit_score_model import RelCreditScoreCustomer, CreditScore
-from src.loan_sales_agent_DL.models.loan_application_model import LoanApplication, RelLoanApplicationCustomer
-from src.loan_sales_agent_DL.models.loan_offer_model import LoanOffer, RelLoanOfferCustomer
+from src.loan_sales_agent_DL.models.loan_application_model import RelLoanApplicationCustomer
+from src.loan_sales_agent_DL.models.loan_offer_model import RelLoanOfferCustomer
 from src.loan_sales_agent_DL.repository.credit_score_repository import set_credit_score, update_credit_score
 from src.loan_sales_agent_BL.schemas.credit_score_schema import CreditScoreCreate
 from src.loan_sales_agent_shared.config import pwd_context
 import uuid
 
-async def get_all_customer(db: AsyncSession, skip: int = 0, limit: int = 100):
-    count_stmt = (
-        select(func.count())
-        .select_from(models.Customer)
-        .where(models.Customer.is_deleted.is_(False))
-    )
-
-    total = await db.scalar(count_stmt)
+async def get_all_customer(db: AsyncSession, skip: int = 0, limit: int = 100, search_query = None, is_deleted = None):
 
     stmt = (
         select(models.Customer)
@@ -35,10 +28,31 @@ async def get_all_customer(db: AsyncSession, skip: int = 0, limit: int = 100):
             selectinload(models.Customer.loan_application_rel)
             .selectinload(RelLoanApplicationCustomer.loan_application),
         )
-        .where(models.Customer.is_deleted.is_(False))
-        .offset(skip)
-        .limit(limit)
     )
+
+    count_stmt = (
+        select(func.count())
+        .select_from(models.Customer)
+    )
+
+    if search_query:
+        search_filter = or_(
+            models.Customer.name.ilike(f"%{search_query}%"),
+            models.Customer.email.ilike(f"%{search_query}%"),
+            models.Customer.phone.ilike(f"%{search_query}%")
+        )
+        stmt = stmt.where(search_filter)
+        count_stmt = count_stmt.where(search_filter)
+
+    if is_deleted is None:
+        stmt = stmt.where(models.Customer.is_deleted.is_(False))
+        count_stmt = count_stmt.where(models.Customer.is_deleted.is_(False))
+    else:
+        stmt = stmt.where(models.Customer.is_deleted.is_(is_deleted))
+        count_stmt = count_stmt.where(models.Customer.is_deleted.is_(is_deleted))
+
+    stmt = stmt.offset(skip).limit(limit)
+    total = await db.scalar(count_stmt)
 
     result = await db.execute(stmt)
 
@@ -51,20 +65,18 @@ async def get_customer_by_id(
     cust_id: uuid.UUID
 ):
     stmt = (
-        select(models.Customer, CreditScore)
-        .outerjoin(
-            RelCreditScoreCustomer,
-            models.Customer.customer_id == RelCreditScoreCustomer.customer_id
+        select(models.Customer)
+        .options(
+            selectinload(models.Customer.credit_score_rel)
+            .selectinload(RelCreditScoreCustomer.credit_score),
+
+            selectinload(models.Customer.loan_application_rel)
+            .selectinload(RelLoanApplicationCustomer.loan_application),
+
+            selectinload(models.Customer.loan_offers_rel)
+            .selectinload(RelLoanOfferCustomer.loan_offers)
         )
-        .outerjoin(
-            CreditScore,
-            RelCreditScoreCustomer.credit_score_id == CreditScore.credit_score_id
-        )
-        .outerjoin()
-        .where(
-            models.Customer.customer_id == cust_id,
-            models.Customer.is_deleted.is_(False)
-        )
+        .where(models.Customer.customer_id == cust_id, models.Customer.is_deleted == False)
     )
     result = await db.execute(stmt)
     return result.first()

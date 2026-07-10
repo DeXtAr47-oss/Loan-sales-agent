@@ -19,9 +19,9 @@ from src.loan_sales_agent_DL.repository.customer_repository import (
     check_phone_number
 )
 
-async def get_all_customer_service(db: AsyncSession, page: int = 1, per_page: int = 10):
+async def get_all_customer_service(db: AsyncSession, page: int = 1, per_page: int = 10, search_query: str = None, is_deleted: bool = None):
     skip = (page - 1) * per_page
-    customers, total = await get_all_customer(db, skip, per_page)
+    customers, total = await get_all_customer(db, skip, per_page, search_query, is_deleted)
 
     records = [
         build_customer_response(customer)
@@ -36,11 +36,10 @@ async def get_all_customer_service(db: AsyncSession, page: int = 1, per_page: in
     )
 
 async def get_by_id_customer_service(db: AsyncSession, cust_id: uuid.UUID):
-    result = await get_customer_by_id(db, cust_id)
-    if result is None:
+    customer = await get_customer_by_id(db, cust_id)
+    if customer is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Customer not found")
-    customer, credit_score = result
-    return build_customer_response(customer, credit_score)
+    return build_customer_response(customer)
 
 async def get_by_email_customer_service(db: AsyncSession, email: EmailStr):
     result = await get_customer_by_email(db, email)

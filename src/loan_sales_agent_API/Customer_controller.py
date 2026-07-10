@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from pydantic import EmailStr
-from typing import List
+from typing import List, Optional
 import uuid
 
 from src.loan_sales_agent_DL.services.connection import get_db
@@ -54,9 +54,11 @@ async def create_customer_controller(
 async def get_all_customers(
     page: int = Query(1, ge=1),
     per_page: int = Query(10, ge=1, le=100),
-    db: AsyncSession = Depends(get_db),
+    search_query: str = Query(None, alias="search_query"),
+    is_deleted: bool = Query(None, alias = "is_deleted"),
+    db: AsyncSession = Depends(get_db)
 ):
-    return await get_all_customer_service(db, page, per_page)
+    return await get_all_customer_service(db, page, per_page, search_query, is_deleted)
 
 @router.get(
     "/me",
@@ -67,15 +69,7 @@ async def get_current_customer(
     db: AsyncSession = Depends(get_db),
     current_user=Depends(get_current_user)
 ):
-    credit_score = None
-
-    if current_user.credit_score_rel:
-        credit_score = current_user.credit_score_rel.credit_score
-
-    return build_customer_response(
-        current_user,
-        credit_score
-    )
+    return build_customer_response(current_user)
 
 @router.get("/{customer_id}", response_model=CustomerResponse, status_code=status.HTTP_200_OK)
 async def get_id(
